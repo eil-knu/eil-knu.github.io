@@ -1,17 +1,12 @@
 /* 에너지정보처리연구실 홈페이지 스크립트
- * 1) data/*.csv(매시간 자동 갱신)를 먼저 읽어 즉시 표시하고
- * 2) 공개 구글 시트를 백그라운드로 다시 읽어, 바뀐 내용이 있으면 바로 반영합니다.
+ * data/*.csv(관리자 페이지에서 저장하는 원본)를 읽어, '홈페이지 표시'가 Y인 행만 그립니다.
  */
 (function () {
   'use strict';
 
-  var SHEET_ID = '145hCMhMUhEPcBmXvujrmHPllScyMAska0wyY7S1hklA';
   var DATASETS = {
-    papers:   { file: 'papers.csv',   tab: '논문',   head: ['ID', '구분', '연도'] },
-    patents:  { file: 'patents.csv',  tab: '특허',   head: ['ID', '구분', '상태'] },
-    projects: { file: 'projects.csv', tab: '과제',   head: ['ID', '과제명(국문)', '과제명(영문)'] },
-    news:     { file: 'news.csv',     tab: '소식',   head: ['ID', '날짜', '제목'] },
-    members:  { file: 'members.csv',  tab: '구성원', head: ['ID', '상태', '과정'] }
+    papers: 'papers.csv', patents: 'patents.csv', projects: 'projects.csv',
+    news: 'news.csv', members: 'members.csv'
   };
   var MONTHS = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.'];
   var AGENCY_LOGOS = ['ketep', 'knu', 'kdi', 'kepco', 'nrf', 'etri', 'dongguk'];
@@ -45,33 +40,19 @@
       .map(function (r) { return r.map(function (x) { return x.trim(); }); })
       .filter(function (r) { return r.some(function (x) { return x !== ''; }); });
   }
-  function validHead(rows, head) {
-    return rows.length > 0 && head.every(function (h, i) { return rows[0][i] === h; });
-  }
-  function rowsKey(rows) {
-    return JSON.stringify(rows.map(function (r) {
-      var a = r.slice(); while (a.length && a[a.length - 1] === '') a.pop(); return a;
-    }));
-  }
-
-  /* 로컬 CSV로 먼저 그리고, 시트에 새 내용이 있으면 다시 그립니다. */
+  /* CSV 한 행을 첫 줄의 열 이름으로 꺼내 쓰는 객체로 바꾸고, 홈페이지 표시가 Y인 행만 넘깁니다. */
   function load(name, render) {
-    var d = DATASETS[name], localKey = null;
-    var local = fetch('data/' + d.file, { cache: 'no-cache' })
+    fetch('data/' + DATASETS[name], { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
       .then(function (t) {
-        var rows = parseCSV(t);
-        localKey = rowsKey(rows);
-        render(rows.slice(1));
+        var rows = parseCSV(t), head = rows.shift() || [];
+        render(rows.map(function (r) {
+          var o = {};
+          head.forEach(function (h, i) { o[h] = r[i] || ''; });
+          return o;
+        }).filter(function (o) { return o['홈페이지 표시'] === 'Y'; }));
       })
       .catch(function () { render([]); });
-    var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
-      '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(d.tab);
-    var remote = fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); });
-    Promise.all([local, remote]).then(function (res) {
-      var rows = parseCSV(res[1]);
-      if (validHead(rows, d.head) && rowsKey(rows) !== localKey) render(rows.slice(1));
-    }).catch(function () { /* 시트를 읽지 못하면 저장된 데이터를 그대로 사용 */ });
   }
 
   function ym(s) { return String(s || '').replace('-', '.'); }
@@ -99,10 +80,10 @@
 
   /* ---------- 데이터 → 객체 ---------- */
   function toPaper(r) {
-    return { id: r[0], kind: r[1], year: r[2], month: r[3], title: r[4], authors: r[5],
-             venue: r[6], vol: r[7], no: r[8], pages: r[9], doi: r[10],
-             // 공개 시트 L~O열: 최신 IF, 최신 JCR 상위%, 출판연도 IF, 출판연도 JCR 상위% (화면에는 최신 값만 표시)
-             ifNow: r[11], rankNow: r[12], ifPub: r[13], rankPub: r[14] };
+    return { id: r['ID'], kind: r['구분'], year: r['연도'], month: r['월'], title: r['논문 제목'], authors: r['저자'],
+             venue: r['저널·학회명'], vol: r['Vol.'], no: r['No.'], pages: r['페이지/Art. No.'], doi: r['DOI'],
+             // 화면에는 최신 IF·JCR 상위%만 표시합니다 (출판연도 값은 실적원장용).
+             ifNow: r['IF(최신)'], rankNow: r['JCR 상위%(최신)'] };
   }
   // 시트에서 7.0이 7로 내려오므로 소수점 한 자리는 붙여 보여 줍니다.
   function ifFmt(v) { v = String(v || '').trim(); return /^\d+$/.test(v) ? v + '.0' : v; }
@@ -113,15 +94,15 @@
     return now ? '<span class="jcr"><b>' + now + '</b></span>' : '';
   }
   function toPatent(r) {
-    var reg = r[2] === '등록';
-    var date = reg ? r[9] : r[7];
-    return { id: r[0], div: r[1], status: r[2], country: r[3], title: r[4], authors: r[5],
-             num: reg ? r[8] : r[6], date: date, year: (String(date).match(/\d{4}/) || [''])[0],
-             link: r[10] };
+    var reg = r['상태'] === '등록';
+    var date = reg ? r['등록일'] : r['출원일'];
+    return { id: r['ID'], div: r['구분'], status: r['상태'], country: r['국가'], title: r['발명의 명칭'], authors: r['발명자'],
+             num: reg ? r['등록번호'] : r['출원번호'], date: date, year: (String(date).match(/\d{4}/) || [''])[0],
+             link: r['링크'] };
   }
   function toProject(r) {
-    return { id: r[0], ko: r[1], en: r[2], prog: r[3], agency: r[4], key: (r[5] || '').toLowerCase(),
-             start: r[6], end: r[7], role: r[8], status: r[9] };
+    return { id: r['ID'], ko: r['과제명(국문)'], en: r['과제명(영문)'], prog: r['사업명'], agency: r['전문기관'],
+             key: (r['기관 마크'] || '').toLowerCase(), start: r['시작'], end: r['종료'], role: r['역할'] };
   }
   function byIdNum(a, b) { return String(a.id).localeCompare(String(b.id), undefined, { numeric: true }); }
 
@@ -202,7 +183,8 @@
   }
 
   function toNews(r) {
-    return { id: r[0], date: normDate(r[1]), title: r[2], photos: splitList(r[3]).map(function (n) { return imgSrc(n, 'news'); }), link: r[4] };
+    return { id: r['ID'], date: normDate(r['날짜']), title: r['제목'],
+             photos: splitList(r['사진']).map(function (n) { return imgSrc(n, 'news'); }), link: r['링크'] };
   }
   function sortNews(list) {
     return list.slice().sort(function (a, b) { return String(b.date).localeCompare(String(a.date)) || -byIdNum(a, b); });
@@ -414,8 +396,8 @@
     '학부연구생': 'Undergraduate Researcher', '박사후연구원': 'Postdoctoral Researcher', '연구원': 'Researcher'
   };
   function toMember(r) {
-    return { id: r[0], state: r[1], course: r[2], name: r[3], en: r[4], interests: r[5], email: r[6],
-             photo: imgSrc(r[7], 'people'), note: r[8] };
+    return { id: r['ID'], state: r['상태'], course: r['과정'], name: r['이름'], en: r['영문 이름'],
+             interests: r['연구 분야'], email: r['이메일'], photo: imgSrc(r['사진'], 'people'), note: r['비고'] };
   }
   function memberCard(m, alumni) {
     var role = ROLE_EN[m.course] || m.course;
