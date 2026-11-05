@@ -215,6 +215,123 @@ function apiCrossref(doi) {
   };
 }
 
+/**
+ * 특허 번호로 정보 가져오기 (Google Patents 공개 기록).
+ * 받는 형식: 10-2984629(국내 등록), 10-2020-0164721(국내 출원), US 11,609,258, WO2019/083144,
+ *           PCT/KR2018/009811, AT527561B1 같은 공개번호, Google Patents 주소.
+ */
+function apiPatent(q) {
+  guard_();
+  var id = patentId_(q);
+  if (!id) throw new Error('번호 형식을 알아보지 못했습니다. 예: 10-2984629, 10-2020-0164721, US 11,609,258');
+  var html = fetchPatentPage_(id);
+  if (!html) throw new Error('공개된 기록이 없습니다. 출원 후 공개(보통 18개월) 전이면 직접 입력하세요.');
+  return parsePatent_(id, html);
+}
+
+function gp_(url) {
+  var r = UrlFetchApp.fetch(url, { muteHttpExceptions: true, followRedirects: true, headers: { 'User-Agent': 'Mozilla/5.0' } });
+  return r.getResponseCode() === 200 ? r.getContentText() : null;
+}
+
+function fetchPatentPage_(id) {
+  var tries = /[A-Z]\d?$/.test(id) ? [id] : [id + 'B1', id + 'B2', id + 'A1', id + 'A'];
+  for (var i = 0; i < tries.length; i++) {
+    var h = gp_('https://patents.google.com/patent/' + tries[i]);
+    if (h) return h;
+  }
+  return null;
+}
+
+/** 입력을 Google Patents 문서 번호로 바꿉니다. 출원번호는 검색해서 찾습니다. */
+function patentId_(q) {
+  q = String(q || '').trim();
+  var m;
+  if ((m = q.match(/patents\.google\.com\/patent\/([A-Z]{2}[0-9A-Z]+)/i))) return m[1].toUpperCase();
+  var s = q.replace(/[\s,]/g, '').toUpperCase();
+  if ((m = s.match(/^10-?(\d{7})(-0{4})?$/))) return 'KR10' + m[1];                    // 국내 등록번호
+  if ((m = s.match(/^US(\d{7,8})$/)) || (m = s.match(/^(\d{1,2}\d{6})$/))) return 'US' + m[1];
+  if ((m = s.match(/^WO(\d{4})\/?(\d{6})$/))) return 'WO' + m[1] + m[2];
+  if (/^[A-Z]{2}\d{5,}[A-Z]\d?$/.test(s)) return s;                                    // 이미 공개번호
+  var key = null;
+  if ((m = s.match(/^10-?(\d{4})-?(\d{7})$/))) key = 'KR10' + m[1] + m[2];             // 국내 출원번호
+  else if ((m = s.match(/^PCT\/?([A-Z]{2})(\d{4})\/?(\d{6})$/))) key = 'PCT/' + m[1] + m[2] + '/' + m[3];
+  if (!key) return null;
+  var j = gp_('https://patents.google.com/xhr/query?url=' + encodeURIComponent('q=' + key) + '&exp=');
+  if (!j) return null;
+  try {
+    var list = [];
+    (JSON.parse(j).results.cluster || []).forEach(function (c) { (c.result || []).forEach(function (r) { list.push(r.patent.publication_number); }); });
+    var want = key.indexOf('PCT') === 0 ? /^WO/ : /^KR/;
+    return list.filter(function (p) { return want.test(p); })[0] || list[0] || null;
+  } catch (e) { return null; }
+}
+
+function parsePatent_(id, h) {
+  var all = function (re) { var out = [], m; while ((m = re.exec(h))) out.push(m[1].replace(/\s+/g, ' ').trim()); return out; };
+  var one = function (re) { return all(re)[0] || ''; };
+  var pub = one(/<dd itemprop="publicationNumber"[^>]*>([^<]+)</g) || id;
+  var cc = pub.slice(0, 2);
+  var country = { KR: '대한민국', US: '미국', WO: 'PCT', AT: '오스트리아', JP: '일본', CN: '중국', EP: '유럽', DE: '독일' }[cc] || cc;
+  var title = one(/<span itemprop="title">([\s\S]*?)<\/span>/g);
+  var inventors = all(/<dd itemprop="inventor"[^>]*>([^<]+)</g);
+  var owners = all(/<dd itemprop="assigneeOriginal"[^>]*>\s*([^<]+?)\s*</g);
+  var appNo = one(/<dd itemprop="applicationNumber"[^>]*>([^<]+)</g);
+  var filed = one(/<time itemprop="filingDate"[^>]*>([^<]+)</g);
+  var granted = '';
+  var ev = /<dd itemprop="events"[^>]*>([\s\S]*?)<\/dd>/g, m;
+  while ((m = ev.exec(h))) {
+    var t = m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+    if (/Application granted/.test(t)) granted = (t.match(/\d{4}-\d{2}-\d{2}/) || [''])[0];
+  }
+  var isGrant = /B\d?$/.test(pub) || !!granted;
+  var korean = /[가-힣]/.test(inventors.join(''));
+  return {
+    '구분': cc === 'KR' ? '국내' : '국외',
+    '상태': isGrant ? '등록' : '출원',
+    '국가': country,
+    '발명의 명칭': title,
+    '발명자': korean ? joinKo_(inventors) : joinEn_(inventors.map(enName_)),
+    '출원번호': fmtAppNo_(appNo),
+    '출원일': filed,
+    '등록번호': isGrant ? fmtRegNo_(pub) : '',
+    '등록일': isGrant ? granted : '',
+    '출원인(권리자)': owners.join('; '),
+    '링크': cc === 'KR' && /^KR10\d{11}/.test(appNo) ? 'https://doi.org/10.8080/' + appNo.slice(2, 15) : 'https://patents.google.com/patent/' + pub
+  };
+}
+
+function joinKo_(a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' 및 ' + a[a.length - 1]; }
+function joinEn_(a) { return a.length < 2 ? a.join('') : a.length === 2 ? a[0] + ' and ' + a[1] : a.slice(0, -1).join(', ') + ', and ' + a[a.length - 1]; }
+/** "Chang Kyu Jung" / "JUNG Chang-kyu" → "C.-K. Jung" */
+function enName_(n) {
+  var p = String(n).replace(/,/g, ' ').trim().split(/\s+/);
+  if (p.length < 2) return n;
+  var fam, given;
+  var famFirst = (p[0] === p[0].toUpperCase() && p[0].length > 1 && p.slice(1).join('') !== p.slice(1).join('').toUpperCase())
+    || (p.length === 2 && /-/.test(p[1]) && !/-/.test(p[0]));   // 'Jung Chae-kyun'처럼 성이 앞
+  if (famFirst) { fam = p[0]; given = p.slice(1); }
+  else { fam = p[p.length - 1]; given = p.slice(0, -1); }
+  var cap = function (w) { return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(); };
+  var parts = given.join('-').split('-').filter(String);
+  return parts.map(function (w) { return w.charAt(0).toUpperCase() + '.'; }).join('-') + ' ' + cap(fam);
+}
+function fmtAppNo_(a) {
+  var m;
+  if ((m = a.match(/^KR10(\d{4})(\d{7})/))) return '10-' + m[1] + '-' + m[2];
+  if ((m = a.match(/^([A-Z]{2})(\d{4})(\d{6})W$/))) return 'PCT/' + m[1] + m[2] + '/' + m[3];
+  if ((m = a.match(/^US(\d{2})(\d{3})(\d{3})/))) return m[1] + '/' + m[2] + ',' + m[3];
+  if ((m = a.match(/^ATA(\d+\/\d{4})/))) return 'A ' + m[1];
+  return a;
+}
+function fmtRegNo_(p) {
+  var m;
+  if ((m = p.match(/^KR10(\d{7})/))) return '10-' + m[1];
+  if ((m = p.match(/^US(\d+)/))) return (+m[1]).toLocaleString('en-US');
+  if ((m = p.match(/^[A-Z]{2}(\d+)/))) return m[1];
+  return p;
+}
+
 /* ---------------- GitHub ---------------- */
 
 function token_() {
