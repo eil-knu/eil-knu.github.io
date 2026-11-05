@@ -27,7 +27,7 @@ var ID_PREFIX = { patents: 'PT', projects: 'PR', news: 'NW', members: 'MB' };
 // 실적원장에는 넣지 않는 열(홈페이지 전용)
 var LEDGER_SKIP = ['홈페이지 표시', '기관 마크'];
 // 원장 모양을 바꾸면 이 값을 올립니다(데이터가 그대로여도 다시 만듦)
-var LEDGER_FORMAT = '2';
+var LEDGER_FORMAT = '3';
 
 /* ---------------- 웹 앱 ---------------- */
 
@@ -54,6 +54,7 @@ function doGet() {
   t.boot = boot ? JSON.stringify(boot).replace(/</g, '\\u003c') : '';
   t.email = email;
   return t.evaluate().setTitle('EIL 관리자')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)   // eil-knu.github.io/admin.html 안에 넣어 쓰기
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
@@ -114,7 +115,9 @@ function apiSave(dataset, row, uploads) {
     cols.forEach(function (c) { next[c] = c in row ? clean_(row[c]) : (cur[c] || ''); });
     if (dataset === 'papers') {
       JCR_COLS.forEach(function (c) { next[c] = cur[c] || ''; });   // JCR은 손대지 않음
-      if (idx < 0) fillJcrFromJournal_(next, rows);                 // 같은 학술지 최신 값 복사
+      var moved = idx >= 0 && String(cur['저널·학회명']).toLowerCase() !== String(next['저널·학회명']).toLowerCase();
+      if (moved) JCR_COLS.forEach(function (c) { next[c] = ''; });     // 학술지를 바꾸면 이전 JCR은 버림
+      if (idx < 0 || moved) fillJcrFromJournal_(next, rows);           // 같은 학술지 최신 값 복사
       next['본인 역할'] = role_(next['저자']);
     }
     if (dataset === 'patents' && !next['링크'] && next['상태'] === '등록' && next['국가'] === '대한민국'
@@ -395,35 +398,140 @@ function syncLedger() {
     props.setProperty('LEDGER_BACKUP', copy.getId());
   }
   var head = ref_();
-  ['papers', 'patents', 'projects'].forEach(function (k) {
-    var t = readCsv_(DATASETS[k].file, head);
-    var rows = t.rows;
-    if (k === 'papers') rows = rows.slice().sort(byDateDesc_('연도', '월'));
-    var cols = t.head.filter(function (c) { return LEDGER_SKIP.indexOf(c) < 0; });
-    var values = [cols].concat(rows.map(function (r) { return cols.map(function (c) { return r[c]; }); }));
-    var sh = ss.getSheetByName(DATASETS[k].tab) || ss.insertSheet(DATASETS[k].tab);
-    sh.clear();
-    if (sh.getMaxColumns() > cols.length) sh.deleteColumns(cols.length + 1, sh.getMaxColumns() - cols.length);
-    sh.getRange(1, 1, sh.getMaxRows(), sh.getMaxColumns()).clearDataValidations();
-    sh.clearConditionalFormatRules();
-    var range = sh.getRange(1, 1, values.length, cols.length);
-    range.setNumberFormat('@').setValues(values).setVerticalAlignment('top').setWrap(false);
-    // 숫자로 쓰는 열
-    cols.forEach(function (c, i) {
-      if (/연구비|^IF|JCR/.test(c) && rows.length) {
-        var r = sh.getRange(2, i + 1, rows.length, 1);
-        r.setNumberFormat(/연구비/.test(c) ? '#,##0' : '0.0##')
-         .setValues(rows.map(function (x) { var v = String(x[c]).replace(/,/g, ''); return [v === '' || isNaN(v) ? x[c] : +v]; }));
-      }
-    });
-    sh.getRange(1, 1, 1, cols.length).setFontWeight('bold').setBackground('#1D2760').setFontColor('#FFFFFF');
-    sh.setFrozenRows(1);
-    sh.setFrozenColumns(1);
-    lock_(sh);
+  var res = ghAll_(['papers', 'patents', 'projects'].map(function (k) { return '/contents/' + DATASETS[k].file + '?ref=' + head; }));
+  var data = { papers: csvFromContents_(res[0]).rows, patents: csvFromContents_(res[1]).rows, projects: csvFromContents_(res[2]).rows };
+  var now = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM');
+
+  // 논문: 구분별로 묶고 그 안에서 최신순, 인용 표기 자동 생성
+  var KIND_ORDER = ['국제 저널', '국제 학술대회', '국내 저널', '국내 학술대회'];
+  var papers = data.papers.slice().sort(function (a, b) {
+    return (KIND_ORDER.indexOf(a['구분']) - KIND_ORDER.indexOf(b['구분'])) || byDateDesc_('연도', '월')(a, b);
   });
-  tidyLedger_(ss);
+  papers.forEach(function (r) { r['인용 표기'] = cite_(r); });
+  writeTab_(ss, '논문', ['ID', '구분', '등재 구분', '연도', '월', '논문 제목', '저자', '본인 역할', '저널·학회명', 'Vol.', 'No.',
+    '페이지/Art. No.', '게재일', 'ISSN/ISBN', 'DOI', 'IF(최신)', 'JCR 상위%(최신)', 'IF(출판연도)', 'JCR 상위%(출판연도)', '인용 표기'], papers);
+
+  // 특허: 등록일(없으면 출원일) 최신순
+  var pdate = function (r) { return r['등록일'] || r['출원일'] || ''; };
+  var patents = data.patents.slice().sort(function (a, b) { return pdate(b).localeCompare(pdate(a)); });
+  writeTab_(ss, '특허', ['ID', '구분', '상태', '국가', '발명의 명칭', '발명자', '출원번호', '출원일', '등록번호', '등록일', '출원인(권리자)', '링크'], patents);
+
+  // 과제: 시작 최신순, 진행/완료 자동
+  var projects = data.projects.slice().sort(function (a, b) { return String(b['시작']).localeCompare(a['시작']); });
+  projects.forEach(function (r) { r['진행'] = r['종료'] >= now ? '진행' : '완료'; });
+  writeTab_(ss, '과제', ['ID', '진행', '과제명(국문)', '과제명(영문)', '사업명', '전문기관', '시작', '종료', '역할', '총 연구비 (천원)', '비고'], projects);
+
+  tidyLedger_(ss, data, now);
   props.setProperty('LEDGER_SYNCED', stamp);
   return 'updated';
+}
+
+var COL_WIDTH = { 'ID': 70, '구분': 90, '등재 구분': 70, '연도': 50, '월': 36, '논문 제목': 360, '저자': 260, '본인 역할': 110,
+  '저널·학회명': 220, '페이지/Art. No.': 110, '게재일': 90, 'DOI': 230, '인용 표기': 520, '발명의 명칭': 340, '발명자': 240,
+  '출원인(권리자)': 200, '링크': 230, '과제명(국문)': 340, '과제명(영문)': 300, '사업명': 180, '전문기관': 200, '진행': 50 };
+
+function writeTab_(ss, name, cols, rows) {
+  var sh = ss.getSheetByName(name) || ss.insertSheet(name);
+  if (sh.getFilter()) sh.getFilter().remove();
+  sh.clear();
+  sh.getRange(1, 1, sh.getMaxRows(), sh.getMaxColumns()).clearDataValidations();
+  sh.clearConditionalFormatRules();
+  if (sh.getMaxColumns() > cols.length) sh.deleteColumns(cols.length + 1, sh.getMaxColumns() - cols.length);
+  if (sh.getMaxColumns() < cols.length) sh.insertColumnsAfter(sh.getMaxColumns(), cols.length - sh.getMaxColumns());
+  var need = rows.length + 1;
+  if (sh.getMaxRows() > need + 20) sh.deleteRows(need + 21, sh.getMaxRows() - need - 20);
+  var values = [cols].concat(rows.map(function (r) { return cols.map(function (c) { return r[c] == null ? '' : r[c]; }); }));
+  sh.getRange(1, 1, values.length, cols.length).setNumberFormat('@').setValues(values)
+    .setVerticalAlignment('top').setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP).setFontSize(10);
+  cols.forEach(function (c, i) {
+    if (/연구비|^IF|JCR/.test(c) && rows.length) {
+      sh.getRange(2, i + 1, rows.length, 1).setNumberFormat(/연구비/.test(c) ? '#,##0' : '0.0##')
+        .setValues(rows.map(function (x) { var v = String(x[c] || '').replace(/,/g, ''); return [v === '' || isNaN(v) ? v : +v]; }));
+    }
+    sh.setColumnWidth(i + 1, COL_WIDTH[c] || 100);
+  });
+  sh.getRange(1, 1, 1, cols.length).setFontWeight('bold').setBackground('#1D2760').setFontColor('#FFFFFF')
+    .setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP).setVerticalAlignment('middle');
+  sh.setFrozenRows(1);
+  sh.setFrozenColumns(1);
+  sh.getRange(1, 1, values.length, cols.length).createFilter();   // 머리글에서 바로 거르기·정렬
+  lock_(sh);
+}
+
+/** IEEE 형식 인용 표기 */
+function cite_(r) {
+  var MON = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.'];
+  var s = r['저자'] + ', "' + r['논문 제목'] + '," ' + r['저널·학회명'];
+  if (r['Vol.']) s += ', vol. ' + r['Vol.'];
+  if (r['No.']) s += ', no. ' + r['No.'];
+  var pg = String(r['페이지/Art. No.'] || '');
+  if (/^\d+\s*[–-]\s*\d+$/.test(pg)) pg = 'pp. ' + pg;
+  if (pg) s += ', ' + pg.replace(/^Art\.\s*/, 'Art. no. ');
+  var m = +r['월'];
+  s += ', ' + (m >= 1 && m <= 12 ? MON[m - 1] + ' ' : '') + r['연도'] + '.';
+  var doi = String(r['DOI'] || '').match(/10\.\d{4,}\/\S+/);
+  if (doi) s += ' doi: ' + doi[0] + '.';
+  return s;
+}
+
+/** 원장에서 더 쓰지 않는 탭(소식·구성원)을 지우고 안내 탭(요약 포함)을 다시 씁니다. */
+function tidyLedger_(ss, data, now) {
+  ['소식', '구성원'].forEach(function (name) {
+    var sh = ss.getSheetByName(name);
+    if (sh && ss.getSheets().length > 1) ss.deleteSheet(sh);
+  });
+  var y0 = +now.slice(0, 4) - 4, recent = function (r) { return +r['연도'] >= y0; };
+  var P = data.papers, T = data.patents, R = data.projects;
+  var lead = function (r) { return /제1저자|교신/.test(r['본인 역할']); };
+  var cnt = function (list, f) { return list.filter(f).length; };
+  var row = function (label, f, list) { return [label, cnt(list, f), cnt(list, function (r) { return f(r) && recent(r); })]; };
+  var kind = function (k) { return function (r) { return r['구분'] === k; }; };
+  var scie = function (r) { return r['등재 구분'] === 'SCIE'; };
+  var sum = function (list) { return list.reduce(function (a, r) { return a + (+String(r['총 연구비 (천원)'] || '').replace(/,/g, '') || 0); }, 0); };
+  var pi = R.filter(function (r) { return /책임/.test(r['역할']); });
+
+  var g = ss.getSheetByName('안내') || ss.insertSheet('안내', 0);
+  if (g.getFilter()) g.getFilter().remove();
+  g.clear();
+  var L = [
+    ['EIL 실적원장', '', ''],
+    ['저장소(github.com/eil-knu/eil-knu.github.io)의 데이터로 매시간 자동으로 만들어집니다. 추가·수정·삭제는 관리자 페이지(홈페이지 맨 아래 "관리자")에서 하세요.', '', ''],
+    ['', '', ''],
+    ['요약', '전체', y0 + '~' + now.slice(0, 4)],
+    row('국제 저널', kind('국제 저널'), P),
+    row('  └ SCIE', function (r) { return kind('국제 저널')(r) && scie(r); }, P),
+    row('  └ SCIE 주저자(제1·교신)', function (r) { return kind('국제 저널')(r) && scie(r) && lead(r); }, P),
+    row('국제 학술대회', kind('국제 학술대회'), P),
+    row('국내 저널', kind('국내 저널'), P),
+    row('국내 학술대회', kind('국내 학술대회'), P),
+    ['특허 등록 (국내 / 국외)', cnt(T, function (r) { return r['상태'] === '등록' && r['구분'] === '국내'; }) + ' / ' + cnt(T, function (r) { return r['상태'] === '등록' && r['구분'] !== '국내'; }), ''],
+    ['특허 출원', cnt(T, function (r) { return r['상태'] !== '등록'; }), ''],
+    ['과제 (연구책임 / 전체)', pi.length + ' / ' + R.length, ''],
+    ['진행 중 과제', cnt(R, function (r) { return r['종료'] >= now; }), ''],
+    ['연구책임 과제 총 연구비 (천원)', sum(pi), ''],
+    ['', '', ''],
+    ['IF · JCR 상위%', 'JCR(Clarivate) 기준. 상위% = 100 − JIF Percentile, 분야가 여럿이면 가장 유리한 분야.', ''],
+    ['저자 표기', '¹ = 공동 제1저자, * = 교신저자. 본인 역할은 저자 표기에서 자동 계산.', ''],
+    ['마지막 갱신', Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm'), '']
+  ];
+  g.getRange(1, 1, L.length, 3).setValues(L).setVerticalAlignment('top').setFontSize(10);
+  g.getRange(1, 1).setFontSize(16).setFontWeight('bold').setFontColor('#1D2760');
+  g.getRange(2, 1, 1, 3).merge().setWrap(true).setFontColor('#3F4450');
+  g.getRange(4, 1, 1, 3).setFontWeight('bold').setBackground('#1D2760').setFontColor('#FFFFFF');
+  g.getRange(5, 2, 11, 2).setHorizontalAlignment('right');
+  g.getRange(15, 2).setNumberFormat('#,##0');
+  g.getRange(17, 2, 1, 2).merge().setWrap(true);
+  g.getRange(18, 2, 1, 2).merge().setWrap(true);
+  g.getRange(17, 1, 3, 1).setFontWeight('bold');
+  g.setColumnWidth(1, 220).setColumnWidth(2, 260).setColumnWidth(3, 260);
+  g.setRowHeight(2, 36);
+  lock_(g);
+  ss.setActiveSheet(g);
+  ss.moveActiveSheet(1);
+}
+
+function byDateDesc_(y, m) {
+  return function (a, b) { return (+b[y] - +a[y]) || ((+b[m] || 0) - (+a[m] || 0)); };
 }
 
 /** 원장 탭을 교수님 계정만 고칠 수 있게 잠급니다(원장은 자동으로 다시 만들어지므로 직접 고칠 일이 없음). */
@@ -434,42 +542,6 @@ function lock_(sh) {
   p.addEditor(me);
   p.removeEditors(p.getEditors().filter(function (u) { return u.getEmail() !== me.getEmail(); }));
   if (p.canDomainEdit()) p.setDomainEdit(false);
-}
-
-/** 원장에서 더 쓰지 않는 탭(소식·구성원)을 지우고 안내 탭을 새 방식에 맞게 다시 씁니다. */
-function tidyLedger_(ss) {
-  ['소식', '구성원'].forEach(function (name) {
-    var sh = ss.getSheetByName(name);
-    if (sh && ss.getSheets().length > 1) ss.deleteSheet(sh);
-  });
-  var g = ss.getSheetByName('안내') || ss.insertSheet('안내', 0);
-  g.clear();
-  var lines = [
-    ['EIL 실적원장'],
-    [''],
-    ['이 시트는 홈페이지 저장소(github.com/eil-knu/eil-knu.github.io)의 data/*.csv에서 매시간 자동으로 만들어집니다.'],
-    ['직접 고치면 다음 갱신 때 덮어써지므로, 추가·수정·삭제는 관리자 페이지에서 하세요.'],
-    ['관리자 페이지: https://eil-knu.github.io 맨 아래 "관리자" 링크'],
-    [''],
-    ['탭', '내용'],
-    ['논문', '국제·국내 저널과 학술대회. 최신순. 저자의 ¹ = 공동 제1저자, * = 교신저자. 본인 역할은 저자 표기에서 자동 계산.'],
-    ['특허', '국내·국외 출원·등록 특허.'],
-    ['과제', '총 연구비(천원)는 과제 전체 금액(전체 기간 합계). 홈페이지에는 표시되지 않습니다.'],
-    [''],
-    ['IF · JCR 상위%', 'JCR(Clarivate) 기준. 상위% = 100 − JIF Percentile, 분야가 여럿이면 가장 유리한 분야. "최신"은 가장 최근 JCR, "출판연도"는 출판 연도의 JCR.'],
-    ['갱신 기준', '마지막 갱신: ' + Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm')]
-  ].map(function (r) { return r.length === 1 ? [r[0], ''] : r; });
-  g.getRange(1, 1, lines.length, 2).setValues(lines).setWrap(true).setVerticalAlignment('top');
-  g.getRange(1, 1).setFontSize(16).setFontWeight('bold').setFontColor('#1D2760');
-  g.getRange(7, 1, 1, 2).setFontWeight('bold').setBackground('#1D2760').setFontColor('#FFFFFF');
-  g.setColumnWidth(1, 140).setColumnWidth(2, 720);
-  lock_(g);
-  ss.setActiveSheet(g);
-  ss.moveActiveSheet(1);
-}
-
-function byDateDesc_(y, m) {
-  return function (a, b) { return (+b[y] - +a[y]) || ((+b[m] || 0) - (+a[m] || 0)); };
 }
 
 /**
