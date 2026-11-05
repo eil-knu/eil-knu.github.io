@@ -67,6 +67,13 @@ h1{margin:0;font-size:26px;color:var(--navy)}
 .f label small{font-weight:400;color:var(--sub)}
 .f input,.f select,.f textarea{height:42px;padding:0 10px;border:1px solid var(--field);border-radius:8px;background:#fff;width:100%}
 .f textarea{height:auto;padding:10px;resize:vertical;line-height:1.5}
+.f input::placeholder,.f textarea::placeholder,.doi input::placeholder{color:#A9B1C1}
+.f .ex{font-size:12px;font-weight:400;color:#6B7385;line-height:1.4}
+.ex.bar{display:block;margin:-6px 2px 0;font-size:12px;color:#6B7385}
+.f .req > span:first-child::after,.reqmark::after{content:' 필수';font-size:11px;font-weight:700;color:#3156C8;margin-left:4px}
+.f .req input,.f .req textarea,.f .req select{border-color:#B9C8F0;background:#F5F8FF}
+.f .miss input,.f .miss textarea,.f .miss select{border-color:var(--red);background:var(--red-bg)}
+.f .miss > span:first-child{color:var(--red)}
 .f .warn input{border-color:#E6C27A;background:var(--amber-bg)}
 .f .ro input{background:var(--bg);color:var(--sub);border-style:dashed}
 .f .auto input,.f .auto select{border-color:#9ED3C9;background:#F3FAF8}
@@ -369,43 +376,48 @@ function rowHtml(k, r) {
 /* ---------- 입력 칸 정의 ---------- */
 var FIELDS = {
   news: [
-    { c: '날짜', type: 'date', w: 's2 k' }, { c: '링크', type: 'url', w: 's4', hint: '선택' },
-    { c: '제목', type: 'textarea' }, { c: '사진', type: 'photos' }
+    { c: '날짜', type: 'date', w: 's2 k', req: 1 }, { c: '링크', type: 'url', w: 's4', hint: '선택', ex: '관련 기사·행사 페이지 주소 예) https://www.kiee.or.kr/…' },
+    { c: '제목', type: 'textarea', req: 1, ex: '예) 2026 대한전기학회 하계학술대회 참가 및 연구성과 발표' }, { c: '사진', type: 'photos' }
   ],
   members: [
     { c: '사진', type: 'photo' },
-    { c: '이름', w: 's3 k' }, { c: '영문 이름', w: 's3 k', ph: 'Hyung Jun Jung' },
-    { c: '과정', type: 'select', opts: COURSES, w: 's3 k' }, { c: '상태', type: 'select', opts: ['재학', '졸업'], w: 's3 k' },
-    { c: '이메일', type: 'email' }, { c: '연구 분야', ph: 'Cable Fault Diagnosis · Reflectometry' },
-    { c: '비고', hint: '졸업생 현재 소속' }
+    { c: '이름', w: 's3 k', req: 1, ph: '정형준' }, { c: '영문 이름', w: 's3 k', req: 1, ph: 'Hyung Jun Jung', ex: '이름 먼저, 성은 마지막' },
+    { c: '과정', type: 'select', opts: COURSES, w: 's3 k', req: 1 }, { c: '상태', type: 'select', opts: ['재학', '졸업'], w: 's3 k', req: 1 },
+    { c: '이메일', type: 'email', ph: '202001388@smail.kongju.ac.kr' },
+    { c: '연구 분야', req: 1, ph: 'Cable Fault Diagnosis · Reflectometry · GNN', ex: '여러 개면 가운뎃점( · )으로 구분, 영문' },
+    { c: '비고', hint: '졸업생 현재 소속', ex: '예) 한국전력공사 전력연구원' }
   ],
   papers: [
-    { c: '구분', type: 'select', opts: KINDS, w: 's2' }, { c: '연도', w: 's2 k', ph: '2026' }, { c: '월', w: 's2 k', ph: '10' },
-    { c: '논문 제목', type: 'textarea' }, { c: '저자', type: 'authors' },
-    { c: '저널·학회명' },
-    { c: 'Vol.', w: 's2 k', label: '권' }, { c: 'No.', w: 's2 k', label: '호' }, { c: '페이지/Art. No.', w: 's2', label: '페이지/Art. No.' },
-    { c: '게재일', type: 'date', w: 's3 k', hint: '선택' }, { c: 'ISSN/ISBN', w: 's3 k' },
-    { c: 'DOI', type: 'url', w: 's4', ph: 'https://doi.org/…' }, { c: '등재 구분', type: 'select', opts: ['', 'SCIE', 'SCOPUS', 'KCI', '기타'], w: 's2' },
+    { c: '구분', type: 'select', opts: KINDS, w: 's2', req: 1 }, { c: '연도', w: 's2 k', ph: '2026', req: 1 }, { c: '월', w: 's2 k', ph: '9', ex: '숫자만' },
+    { c: '논문 제목', type: 'textarea', req: 1 }, { c: '저자', type: 'authors', req: 1 },
+    { c: '저널·학회명', req: 1, ph: 'IEEE Transactions on Instrumentation and Measurement', ex: '약어 말고 전체 이름. 학회는 개최지까지 예) IEEE I2MTC, Nancy, France' },
+    { c: 'Vol.', w: 's2 k', label: '권', ph: '75' }, { c: 'No.', w: 's2 k', label: '호', ph: '9' },
+    { c: '페이지/Art. No.', w: 's2', label: '페이지/Art. No.', ph: 'Art. 9308', ex: '쪽이면 2192–2198' },
+    { c: '게재일', type: 'date', w: 's3 k', hint: '선택' }, { c: 'ISSN/ISBN', w: 's3 k', ph: '0018-9456' },
+    { c: 'DOI', type: 'url', w: 's4', ph: 'https://doi.org/10.1109/TIM.2026.1234567' }, { c: '등재 구분', type: 'select', opts: ['', 'SCIE', 'SCOPUS', 'KCI', '기타'], w: 's2' },
     { type: 'jcr' }
   ],
   patents: [
-    { c: '구분', type: 'select', opts: ['국내', '국외'], w: 's2 k' }, { c: '상태', type: 'select', opts: ['출원', '등록'], w: 's2 k' }, { c: '국가', w: 's2', ph: '대한민국' },
-    { c: '발명의 명칭', type: 'textarea' }, { c: '발명자' },
-    { c: '출원번호', w: 's3 k' }, { c: '출원일', type: 'date', w: 's3 k' },
-    { c: '등록번호', w: 's3 k', ph: '등록되면 입력' }, { c: '등록일', type: 'date', w: 's3 k' },
-    { c: '출원인(권리자)', warn: true, ph: '예: 국립공주대학교 산학협력단' },
-    { c: '링크', type: 'url', hint: '선택' }
+    { c: '구분', type: 'select', opts: ['국내', '국외'], w: 's2 k', req: 1 }, { c: '상태', type: 'select', opts: ['출원', '등록'], w: 's2 k', req: 1 },
+    { c: '국가', w: 's2', ph: '대한민국', req: 1, ex: '대한민국 · 미국 · PCT · 오스트리아' },
+    { c: '발명의 명칭', type: 'textarea', req: 1 },
+    { c: '발명자', req: 1, ex: '국내) 홍길동, 김철수 및 권구영   국외) G. D. Hong, C. S. Kim, and G.-Y. Kwon' },
+    { c: '출원번호', w: 's3 k', req: '출원', ph: '10-2026-0137104', ex: 'PCT/KR2018/009811 · US 17/371,776' }, { c: '출원일', type: 'date', w: 's3 k', req: '출원' },
+    { c: '등록번호', w: 's3 k', req: '등록', ph: '10-2984629', ex: '미국 11,609,258 · 등록 특허만' }, { c: '등록일', type: 'date', w: 's3 k', req: '등록' },
+    { c: '출원인(권리자)', warn: true, ph: '국립공주대학교 산학협력단', ex: '여러 곳이면 세미콜론(;) 뒤 한 칸 띄우기 예) 국립공주대학교 산학협력단; (주)그리드큐어' },
+    { c: '링크', type: 'url', hint: '선택', ex: '비우면 국내 등록 특허는 특허청 DOI로 자동 생성' }
   ],
   projects: [
-    { c: '과제명(국문)', type: 'textarea' }, { c: '과제명(영문)', type: 'textarea' },
-    { c: '전문기관', w: 's3', ph: '한국연구재단 (NRF)' }, { c: '사업명', w: 's3', hint: '선택' },
+    { c: '과제명(국문)', type: 'textarea', req: 1 }, { c: '과제명(영문)', type: 'textarea', req: 1 },
+    { c: '전문기관', w: 's3', req: 1, ph: '한국연구재단 (NRF)', ex: '기관명 (영문 약칭)' }, { c: '사업명', w: 's3', hint: '선택', ph: '개인기초연구사업' },
     { c: '기관 마크', type: 'logo' },
-    { c: '시작', type: 'month', w: 's2 k' }, { c: '종료', type: 'month', w: 's2 k' },
-    { c: '역할', type: 'select', opts: ['연구책임자', '공동연구책임자', '참여연구자'], w: 's2' },
-    { c: '총 연구비 (천원)', type: 'money', warn: true, hint: '과제 전체 금액' },
+    { c: '시작', type: 'month', w: 's2 k', req: 1 }, { c: '종료', type: 'month', w: 's2 k', req: 1 },
+    { c: '역할', type: 'select', opts: ['연구책임자', '공동연구책임자', '참여연구자'], w: 's2', req: 1 },
+    { c: '총 연구비 (천원)', type: 'money', warn: true, hint: '과제 전체 금액', ex: '천원 단위 숫자 예) 250,000 = 2억 5천만 원' },
     { c: '비고', hint: '선택' }
   ]
 };
+function isReq(f, r) { return f.req === 1 || (f.req && r['상태'] === f.req); }
 var DEFAULTS = {
   news: function () { return { '날짜': today(), '홈페이지 표시': 'Y' }; },
   members: function () { return { '상태': '재학', '과정': '석사과정', '홈페이지 표시': 'Y' }; },
@@ -426,8 +438,8 @@ function drawEditor(k, cur) {
   }
   var d = DRAFT, r = d.row;
   var html = '<h2>' + (cur ? esc(cur.ID) + ' 수정' : '새 ' + LABEL[k]) + '</h2>';
-  if (k === 'patents') html += '<div class="doi"><b>번호</b><input id="pno" placeholder="10-2984629 · 10-2026-0137104 · US 11,609,258 · PCT/KR2018/009811"><button class="btn sm pri" id="pnoGo">가져오기</button></div>';
-  if (k === 'papers' && !cur) html += '<div class="doi"><b>DOI</b><input id="doi" placeholder="10.1109/TIM.2026.1234567"><button class="btn sm pri" id="doiGo">가져오기</button></div>';
+  if (k === 'patents') html += '<div class="doi"><b>번호</b><input id="pno" placeholder="10-2984629 · 10-2026-0137104 · US 11,609,258 · PCT/KR2018/009811"><button class="btn sm pri" id="pnoGo">가져오기</button></div><small class="ex bar">예) 국내 등록 10-2984629 · 국내 출원 10-2020-0164721 · 미국 US 11,609,258 · PCT/KR2018/009811 · WO2019/083144 · Google Patents 주소</small>';
+  if (k === 'papers' && !cur) html += '<div class="doi"><b>DOI</b><input id="doi" placeholder="10.1109/TIM.2026.1234567"><button class="btn sm pri" id="doiGo">가져오기</button></div><small class="ex bar">예) 10.1109/TIM.2026.1234567 또는 https://doi.org/10.3390/app16189308</small>';
   html += '<div class="f">' + FIELDS[k].map(function (f) { return fieldHtml(k, f, r, d); }).join('') + '</div>';
   html += '<label class="chk"><input type="checkbox" id="show"' + (r['홈페이지 표시'] === 'Y' ? ' checked' : '') + '> 홈페이지에 표시</label>';
   if (d.confirm) {
@@ -445,17 +457,18 @@ function drawEditor(k, cur) {
 
 function fieldHtml(k, f, r, d) {
   var v = r[f.c] || '', label = '<span>' + esc(f.label || f.c) + (f.hint ? ' <small>(' + esc(f.hint) + ')</small>' : '') + '</span>';
-  var w = f.w || '', cls = w + (f.warn && !v ? ' warn' : '');
+  var w = f.w || '', req = isReq(f, r), cls = w + (f.warn && !v ? ' warn' : '') + (req ? ' req' : '') + (req && !v && d.tried ? ' miss' : '');
+  var ex = f.ex ? '<small class="ex">' + esc(f.ex) + '</small>' : '';
   var attrs = ' data-c="' + esc(f.c) + '" placeholder="' + esc(f.ph || '') + '"';
   switch (f.type) {
-    case 'textarea': return '<label class="' + cls + '">' + label + '<textarea rows="2"' + attrs + '>' + esc(v) + '</textarea></label>';
+    case 'textarea': return '<label class="' + cls + '">' + label + '<textarea rows="2"' + attrs + '>' + esc(v) + '</textarea>' + ex + '</label>';
     case 'select': return '<label class="' + cls + '">' + label + '<select' + attrs + '>' +
       (f.opts.indexOf(v) < 0 && v ? '<option selected>' + esc(v) + '</option>' : '') +
       f.opts.map(function (o) { return '<option' + (o === v ? ' selected' : '') + ' value="' + esc(o) + '">' + (o || '—') + '</option>'; }).join('') + '</select></label>';
-    case 'date': return '<label class="' + cls + '">' + label + '<input type="date" value="' + esc(normDate(v)) + '"' + attrs + '></label>';
+    case 'date': return '<label class="' + cls + '">' + label + '<input type="date" value="' + esc(normDate(v)) + '"' + attrs + '>' + ex + '</label>';
     case 'month': return '<label class="' + cls + '">' + label + '<input type="month" value="' + esc(v) + '"' + attrs + '></label>';
     case 'money':
-      return '<label class="' + cls + '">' + label + '<input inputmode="numeric" value="' + esc(fmtMoney(v)) + '"' + attrs + ' placeholder="예: 250,000"></label>';
+      return '<label class="' + cls + '">' + label + '<input inputmode="numeric" value="' + esc(fmtMoney(v)) + '"' + attrs + '>' + ex + '</label>';
     case 'photos': return photosHtml(r, d);
     case 'photo': return photoHtml(r, d);
     case 'logo': return logoHtml(r);
@@ -465,7 +478,7 @@ function fieldHtml(k, f, r, d) {
       var jv = r['JCR 상위%(최신)'] ? 'IF ' + (r['IF(최신)'] || '—') + ' · 상위 ' + r['JCR 상위%(최신)'] + '%' : (r['등재 구분'] === 'SCIE' ? 'JCR 대기' : '해당 없음');
       return '<label class="ro"><span>IF · JCR 상위%</span><input value="' + esc(jv) + '" disabled></label>';
     default:
-      return '<label class="' + cls + '">' + label + '<input type="' + (f.type || 'text') + '" value="' + esc(v) + '"' + attrs + '></label>';
+      return '<label class="' + cls + '">' + label + '<input type="' + (f.type || 'text') + '" value="' + esc(v) + '"' + attrs + '>' + ex + '</label>';
   }
 }
 function normDate(s) { var m = String(s || '').match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/); return m ? m[1] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[3]).slice(-2) : ''; }
@@ -496,7 +509,7 @@ function logoHtml(r) {
 }
 function authorsHtml(d) {
   var meRole = role(buildAuthors(d.authors));
-  return '<div style="grid-column:span 6;display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500">저자</span><button class="btn sm" id="auAdd" type="button">＋ 저자</button></div>' +
+  return '<div style="grid-column:span 6;display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500" class="reqmark">저자 <small style="font-weight:400;color:var(--sub)">· 영문 G.-Y. Kwon, 국문 권구영</small></span><button class="btn sm" id="auAdd" type="button">＋ 저자</button></div>' +
     '<div class="authors"><div class="au"><span>#</span><span>이름</span><span>공동1¹</span><span>교신*</span><span></span></div>' +
     d.authors.map(function (a, i) {
       return '<div class="au' + (isMe(a.name) ? ' me' : '') + '"><span>' + (i + 1) + '</span><input type="text" data-au="' + i + '" value="' + esc(a.name) + '">' +
@@ -512,6 +525,7 @@ function collect(k) {
     var c = el.dataset.c, v = el.value;
     if (el.type === 'month' || el.type === 'date') v = v || '';
     if (c === '총 연구비 (천원)') v = v.replace(/[^\d]/g, '');
+    if (c === '출원인(권리자)') v = v.replace(/\s*;\s*/g, '; ').replace(/;\s*$/, '');
     r[c] = v;
   });
   if (DRAFT.authors) {
@@ -596,6 +610,8 @@ function bindEditor(k, cur) {
   // 연구비 쉼표
   var m = $('[data-c="총 연구비 (천원)"]', ed);
   if (m) m.oninput = function () { var p = m.value.length - m.selectionStart; m.value = fmtMoney(m.value); var q = Math.max(0, m.value.length - p); m.setSelectionRange(q, q); };
+  // 상태를 바꾸면 필수 칸(등록번호·등록일) 표시도 바뀜
+  if (k === 'patents') $('[data-c="상태"]', ed).onchange = function () { redraw(k, cur); };
   // 특허 번호 → Google Patents 공개 기록
   if ($('#pnoGo', ed)) $('#pnoGo', ed).onclick = function () {
     var b = this; b.disabled = true; b.textContent = '찾는 중…';
@@ -651,14 +667,18 @@ function askLogoName(k, cur, o) {
 }
 
 function validate(k, r) {
-  var need = { news: ['날짜', '제목'], members: ['이름'], papers: ['구분', '연도', '논문 제목', '저자', '저널·학회명'], patents: ['발명의 명칭', '출원번호'], projects: ['과제명(국문)', '전문기관', '시작', '종료'] }[k];
-  var miss = need.filter(function (c) { return !String(r[c] || '').trim(); });
-  if (miss.length) throw new Error('다음 칸을 채워 주세요: ' + miss.join(', '));
+  var miss = FIELDS[k].filter(function (f) { return f.c && isReq(f, r) && !String(r[f.c] || '').trim(); })
+    .map(function (f) { return f.label || f.c; });
+  if (miss.length) throw new Error('홈페이지에 표시되는 필수 칸이 비어 있습니다: ' + miss.join(', '));
 }
 
 function save(k, cur) {
   var r = collect(k), b = $('#save');
-  try { validate(k, r); } catch (e) { return toast(errMsg(e), true); }
+  try { validate(k, r); } catch (e) {
+    DRAFT.tried = true; drawEditor(k, cur);
+    var first = $('#ed .miss'); if (first) first.scrollIntoView({ block: 'center' });
+    return toast(errMsg(e), true);
+  }
   b.disabled = true; b.textContent = '저장 중…';
   var row = Object.assign({}, r);
   if (!cur) delete row.ID;

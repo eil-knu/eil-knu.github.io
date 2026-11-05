@@ -231,7 +231,9 @@ function apiPatent(q) {
 
 function gp_(url) {
   var r = UrlFetchApp.fetch(url, { muteHttpExceptions: true, followRedirects: true, headers: { 'User-Agent': 'Mozilla/5.0' } });
-  return r.getResponseCode() === 200 ? r.getContentText() : null;
+  var code = r.getResponseCode();
+  if (code === 429 || code === 503) throw new Error('Google Patents가 잠시 응답하지 않습니다. 1~2분 뒤 다시 시도하세요.');
+  return code === 200 ? r.getContentText() : null;
 }
 
 function fetchPatentPage_(id) {
