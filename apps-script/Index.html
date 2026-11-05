@@ -140,7 +140,7 @@ h1{margin:0;font-size:26px;color:var(--navy)}
 </div>
 <script>
 var ME = '<?= email ?>';
-if (ME.indexOf('<?') === 0) ME = 'dev@local';
+if (ME.charAt(0) === '<') ME = 'dev@local';
 var LIVE = !!(window.google && google.script && google.script.run);
 var SITE = LIVE ? 'https://eil-knu.github.io/' : '../';
 var DB = null, LOGOS = [], VIEW = 'todo', SEL = {}, FILTER = {}, DRAFT = null;
