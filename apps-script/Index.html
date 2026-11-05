@@ -145,7 +145,7 @@ var ME = '<?= email ?>';
 if (ME.charAt(0) === '<') ME = 'dev@local';
 var LIVE = !!(window.google && google.script && google.script.run);
 var SITE = LIVE ? 'https://eil-knu.github.io/' : '../';
-var LOGO_V = Date.now(), DB = null, LOGOS = [], VIEW = 'todo', SEL = {}, FILTER = {}, DRAFT = null;
+var PRESET = null, LOGO_V = Date.now(), DB = null, LOGOS = [], VIEW = 'todo', SEL = {}, FILTER = {}, DRAFT = null;
 
 var MENU = [
   ['todo', '채워야 할 항목'],
@@ -416,7 +416,8 @@ var DEFAULTS = {
 function drawEditor(k, cur) {
   var ed = $('#ed');
   if (!DRAFT || DRAFT.key !== k + ':' + (cur ? cur.ID : 'new')) {
-    var base = cur ? Object.assign({}, cur) : DEFAULTS[k]();
+    var base = cur ? Object.assign({}, cur) : (PRESET || DEFAULTS[k]());
+    PRESET = null;
     DRAFT = { key: k + ':' + (cur ? cur.ID : 'new'), row: base, uploads: [], previews: {}, orig: null,
               authors: k === 'papers' ? parseAuthors(base['저자']) : null, confirm: false };
     if (DRAFT.authors && !DRAFT.authors.length) DRAFT.authors = [{ name: '', first: false, corr: false }];
@@ -431,7 +432,7 @@ function drawEditor(k, cur) {
       '<div class="r"><button class="btn sm" id="noDel">취소</button><button class="btn sm redf" id="yesDel">삭제</button></div></div>';
   }
   html += '<div class="acts"><div class="r">' +
-    (cur ? '<button class="btn del" id="del">삭제</button>' : '') +
+    (cur ? '<button class="btn del" id="del">삭제</button><button class="btn" id="dup">복제</button>' : '') +
     (k === 'members' && cur && r['상태'] !== '졸업' ? '<button class="btn" id="grad">졸업 처리</button>' : '') +
     '</div><button class="btn pri" id="save">저장</button></div>';
   ed.innerHTML = html;
@@ -525,6 +526,16 @@ function bindEditor(k, cur) {
   if ($('#del', ed)) $('#del', ed).onclick = function () { collect(k); d.confirm = true; drawEditor(k, cur); $('#yesDel').scrollIntoView({ block: 'center' }); };
   if ($('#noDel', ed)) $('#noDel', ed).onclick = function () { d.confirm = false; drawEditor(k, cur); };
   if ($('#yesDel', ed)) $('#yesDel', ed).onclick = function () { remove(k, cur); };
+  if ($('#dup', ed)) $('#dup', ed).onclick = function () {
+    // 지금 보고 있는 항목을 새 항목의 초안으로 복사 (ID·DOI는 비움)
+    var copy = Object.assign({}, collect(k));
+    delete copy.ID;
+    if (k === 'papers') copy.DOI = '';
+    PRESET = copy;
+    SEL[k] = 'new'; DRAFT = null; draw();
+    $('#ed').scrollIntoView();
+    toast('복제했습니다. 필요한 곳을 고친 뒤 저장하세요.');
+  };
   if ($('#grad', ed)) $('#grad', ed).onclick = function () {
     collect(k); d.row['상태'] = '졸업'; drawEditor(k, cur);
     toast('상태를 "졸업"으로 바꿨습니다. 비고에 현재 소속을 적고 저장하세요.');
