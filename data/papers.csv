@@ -1,5 +1,4 @@
 ID,구분,연도,월,논문 제목,저자,본인 역할,저널·학회명,Vol.,No.,페이지/Art. No.,게재일,ISSN/ISBN,DOI,등재 구분,홈페이지 표시,IF(최신),JCR 상위%(최신),IF(출판연도),JCR 상위%(출판연도)
-IJ-030,국제 저널,2017,7,[TEST] Detection of local temperature change on HTS cables via time-frequency domain reflectometry,"S. S. Bang, G. S. Lee, G.-Y. Kwon, Y. H. Lee, G. H. Ji, S. Sohn, K. Park, and Y.-J. Shin*",공동저자,Journal of Physics: Conference Series,871,1,Art. 012100,2017-07-26,1742-6588,,SCOPUS,Y,,,,
 IJ-001,국제 저널,2026,9,Sensitivity Enhancement of Weak Reflection Signals in Reflectometry via Concurrent Pulse Superposition,"G. H. Ji, G.-Y. Kwon, H.-M. Seong, and S. J. Chang*",공동저자,Applied Sciences,16,18,Art. 9308,2026-09-19,2076-3417,https://doi.org/10.3390/app16189308,SCIE,Y,2.9,30.4,,
 DJ-001,국내 저널,2026,9,해저케이블 계통용 154 kV 가스절연 종단접속함의 유전손실 변화에 따른 외부 온도 응답 해석,"홍창현, 홍동석, 정재철, 권구영, 이춘권 및 장승진*",공동저자,전기학회논문지,75,9,2192–2198,2026-09-30,1975-8359,https://doi.org/10.5370/KIEE.2026.75.9.2192,KCI,Y,,,,
 DJ-002,국내 저널,2026,8,위상 스윕 기반 복소 신호 추정을 통한 시간-주파수 영역 반사파계측법에서의 신호 검출 성능 향상,"이주봉, 권구영 및 이춘권*",공동저자,전기학회논문지,75,8,1872–1878,2026-08-31,1975-8359,https://doi.org/10.5370/KIEE.2026.75.8.1872,KCI,Y,,,,
