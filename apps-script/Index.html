@@ -448,7 +448,7 @@ function fieldHtml(k, f, r, d) {
     case 'month': return '<label class="' + cls + '">' + label + '<input type="month" value="' + esc(v) + '"' + attrs + '></label>';
     case 'money':
       return '<label class="' + cls + '">' + label + '<input inputmode="numeric" value="' + esc(fmtMoney(v)) + '"' + attrs + ' placeholder="예: 250,000">' +
-        '<small style="color:var(--amber)">전체 기간 합계를 한 번만 입력 · 홈페이지에는 표시되지 않습니다</small></label>';
+        '<small style="color:var(--amber)">과제 전체의 총 연구비(전체 기간 합계, 참여 과제도 과제 전체 금액)를 한 번만 입력 · 홈페이지에는 표시되지 않습니다</small></label>';
     case 'photos': return photosHtml(r, d);
     case 'photo': return photoHtml(r, d);
     case 'logo': return logoHtml(r);

@@ -24,6 +24,10 @@ var DATASETS = {
 var JCR_COLS = ['IF(최신)', 'JCR 상위%(최신)', 'IF(출판연도)', 'JCR 상위%(출판연도)'];
 var PAPER_PREFIX = { '국제 저널': 'IJ', '국제 학술대회': 'IC', '국내 저널': 'DJ', '국내 학술대회': 'DC' };
 var ID_PREFIX = { patents: 'PT', projects: 'PR', news: 'NW', members: 'MB' };
+// 실적원장에는 넣지 않는 열(홈페이지 전용)
+var LEDGER_SKIP = ['홈페이지 표시', '기관 마크'];
+// 원장 모양을 바꾸면 이 값을 올립니다(데이터가 그대로여도 다시 만듦)
+var LEDGER_FORMAT = '2';
 
 /* ---------------- 웹 앱 ---------------- */
 
@@ -36,7 +40,15 @@ function doGet() {
       '<p>' + (email ? esc_(email) + ' 계정은 관리자로 등록되어 있지 않습니다.' : '구글 계정 정보를 확인할 수 없습니다.') +
       '<br>교수님께 이메일 등록을 요청하세요.</p></div>').setTitle('EIL 관리자');
   }
-  var t = HtmlService.createTemplateFromFile('Index');
+  // 화면(Index.html)은 GitHub 저장소에서 바로 읽습니다. 그래서 화면만 고칠 때는 다시 배포할 필요가 없습니다.
+  // GitHub을 못 읽으면 이 프로젝트에 들어 있는 Index 파일을 씁니다.
+  var t;
+  try {
+    var j = gh_('get', '/contents/apps-script/Index.html?ref=' + BRANCH);
+    t = HtmlService.createTemplate(Utilities.newBlob(Utilities.base64Decode(j.content.replace(/\s/g, ''))).getDataAsString('UTF-8'));
+  } catch (e) {
+    t = HtmlService.createTemplateFromFile('Index');
+  }
   t.email = email;
   return t.evaluate().setTitle('EIL 관리자')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
@@ -335,7 +347,8 @@ function syncLedger() {
   var props = PropertiesService.getScriptProperties();
   if (props.getProperty('PRIVATE_IMPORTED') !== 'Y') throw new Error('먼저 importLedgerPrivate()를 한 번 실행하세요.');
   var last = (gh_('get', '/commits?path=data&per_page=1&sha=' + BRANCH) || [{}])[0].sha;
-  if (last && last === props.getProperty('LEDGER_SYNCED')) return 'no change';
+  var stamp = LEDGER_FORMAT + ':' + last;
+  if (last && stamp === props.getProperty('LEDGER_SYNCED')) return 'no change';
   var ss = SpreadsheetApp.openById(LEDGER_ID);
   if (!props.getProperty('LEDGER_BACKUP')) {
     var copy = DriveApp.getFileById(LEDGER_ID).makeCopy(ss.getName() + ' 백업 ' + Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd'));
@@ -346,10 +359,11 @@ function syncLedger() {
     var t = readCsv_(DATASETS[k].file, head);
     var rows = t.rows;
     if (k === 'papers') rows = rows.slice().sort(byDateDesc_('연도', '월'));
-    var cols = t.head;
+    var cols = t.head.filter(function (c) { return LEDGER_SKIP.indexOf(c) < 0; });
     var values = [cols].concat(rows.map(function (r) { return cols.map(function (c) { return r[c]; }); }));
     var sh = ss.getSheetByName(DATASETS[k].tab) || ss.insertSheet(DATASETS[k].tab);
     sh.clear();
+    if (sh.getMaxColumns() > cols.length) sh.deleteColumns(cols.length + 1, sh.getMaxColumns() - cols.length);
     sh.getRange(1, 1, sh.getMaxRows(), sh.getMaxColumns()).clearDataValidations();
     sh.clearConditionalFormatRules();
     var range = sh.getRange(1, 1, values.length, cols.length);
@@ -365,9 +379,53 @@ function syncLedger() {
     sh.getRange(1, 1, 1, cols.length).setFontWeight('bold').setBackground('#1D2760').setFontColor('#FFFFFF');
     sh.setFrozenRows(1);
     sh.setFrozenColumns(1);
+    lock_(sh);
   });
-  props.setProperty('LEDGER_SYNCED', last || '');
+  tidyLedger_(ss);
+  props.setProperty('LEDGER_SYNCED', stamp);
   return 'updated';
+}
+
+/** 원장 탭을 교수님 계정만 고칠 수 있게 잠급니다(원장은 자동으로 다시 만들어지므로 직접 고칠 일이 없음). */
+function lock_(sh) {
+  sh.getProtections(SpreadsheetApp.ProtectionType.SHEET).forEach(function (p) { p.remove(); });
+  var p = sh.protect().setDescription('관리자 페이지에서 자동 생성 · 직접 수정 금지');
+  var me = Session.getEffectiveUser();
+  p.addEditor(me);
+  p.removeEditors(p.getEditors().filter(function (u) { return u.getEmail() !== me.getEmail(); }));
+  if (p.canDomainEdit()) p.setDomainEdit(false);
+}
+
+/** 원장에서 더 쓰지 않는 탭(소식·구성원)을 지우고 안내 탭을 새 방식에 맞게 다시 씁니다. */
+function tidyLedger_(ss) {
+  ['소식', '구성원'].forEach(function (name) {
+    var sh = ss.getSheetByName(name);
+    if (sh && ss.getSheets().length > 1) ss.deleteSheet(sh);
+  });
+  var g = ss.getSheetByName('안내') || ss.insertSheet('안내', 0);
+  g.clear();
+  var lines = [
+    ['EIL 실적원장'],
+    [''],
+    ['이 시트는 홈페이지 저장소(github.com/eil-knu/eil-knu.github.io)의 data/*.csv에서 매시간 자동으로 만들어집니다.'],
+    ['직접 고치면 다음 갱신 때 덮어써지므로, 추가·수정·삭제는 관리자 페이지에서 하세요.'],
+    ['관리자 페이지: https://eil-knu.github.io 맨 아래 "관리자" 링크'],
+    [''],
+    ['탭', '내용'],
+    ['논문', '국제·국내 저널과 학술대회. 최신순. 저자의 ¹ = 공동 제1저자, * = 교신저자. 본인 역할은 저자 표기에서 자동 계산.'],
+    ['특허', '국내·국외 출원·등록 특허.'],
+    ['과제', '총 연구비(천원)는 과제 전체 금액(전체 기간 합계). 홈페이지에는 표시되지 않습니다.'],
+    [''],
+    ['IF · JCR 상위%', 'JCR(Clarivate) 기준. 상위% = 100 − JIF Percentile, 분야가 여럿이면 가장 유리한 분야. "최신"은 가장 최근 JCR, "출판연도"는 출판 연도의 JCR.'],
+    ['갱신 기준', '마지막 갱신: ' + Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm')]
+  ].map(function (r) { return r.length === 1 ? [r[0], ''] : r; });
+  g.getRange(1, 1, lines.length, 2).setValues(lines).setWrap(true).setVerticalAlignment('top');
+  g.getRange(1, 1).setFontSize(16).setFontWeight('bold').setFontColor('#1D2760');
+  g.getRange(7, 1, 1, 2).setFontWeight('bold').setBackground('#1D2760').setFontColor('#FFFFFF');
+  g.setColumnWidth(1, 140).setColumnWidth(2, 720);
+  lock_(g);
+  ss.setActiveSheet(g);
+  ss.moveActiveSheet(1);
 }
 
 function byDateDesc_(y, m) {
