@@ -458,7 +458,7 @@ function fieldHtml(k, f, r, d) {
     case 'jcr':
       if (r['구분'] !== '국제 저널') return '';
       var jv = r['JCR 상위%(최신)'] ? 'IF ' + (r['IF(최신)'] || '—') + ' · 상위 ' + r['JCR 상위%(최신)'] + '%' : 'JCR 대기';
-      return '<label class="ro"><span>IF · JCR 상위% <small>(자동)</small></span><input value="' + esc(jv) + '" disabled></label>';
+      return '<label class="ro"><span>IF · JCR 상위%</span><input value="' + esc(jv) + '" disabled></label>';
     default:
       return '<label class="' + cls + '">' + label + '<input type="' + (f.type || 'text') + '" value="' + esc(v) + '"' + attrs + '></label>';
   }

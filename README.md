@@ -12,7 +12,8 @@ GitHub Pages로 공개되며(https://eil-knu.github.io/), 논문·특허·과제
 |---|---|
 | 소식, 구성원, 논문, 특허, 과제 (사진·기관 로고 포함) | 관리자 페이지 |
 | 비어 있는 칸(과제 총 연구비, 특허 출원인) | 관리자 페이지 → 채워야 할 항목 |
-| IF · JCR 상위% | 직접 입력하지 않음 (학교 네트워크에서 따로 갱신) |
+| IF · JCR 상위% | 입력하지 않음 → 아래 "IF · JCR 갱신" (Claude에게 요청) |
+| 관리자 추가·삭제 | Apps Script 프로젝트 설정 → 스크립트 속성 `ADMINS`에서 이메일을 넣거나 지움 (바로 적용) |
 | 소개 문구, 교수 약력, 연구 분야 그림 | `src/*.html` 수정 후 `python scripts/build.py` (교수님) |
 
 - **실적원장**(구글 시트)은 이제 결과물입니다. 저장소 데이터로 매시간 논문·특허·과제 탭이 다시 만들어지니 시트를 직접 고치지 마세요.
@@ -35,6 +36,36 @@ GitHub Pages로 공개되며(https://eil-knu.github.io/), 논문·특허·과제
 - `members.csv`: `ID, 상태(재학/졸업), 과정, 이름, 영문 이름, 연구 분야, 이메일, 사진, 비고, 홈페이지 표시`
 
 사진 칸에 파일 이름을 적으면 `assets/img/news/`(구성원은 `people/`)의 사진을 씁니다. 전체 주소나 구글 드라이브 공유 링크도 됩니다.
+
+## IF · JCR 갱신 (Claude에게 요청)
+
+JCR은 학교 네트워크에서만 열리고 관리자 페이지에서는 입력하지 않습니다. 필요할 때(보통 매년 6~7월 JCR 발표 뒤, 또는 새 국제 저널 논문이 'JCR 대기'일 때)
+**학교 네트워크에 연결된 PC**의 Claude Code에서 이 저장소를 열고 다음처럼 요청합니다.
+
+> eil-knu.github.io 저장소 README의 "IF · JCR 갱신" 규칙대로 papers.csv의 IF·JCR을 갱신하고 커밋·푸시해줘.
+
+**규칙**
+1. 대상: `구분`이 `국제 저널`이고 `등재 구분`이 `SCIE`인 논문.
+2. JCR 학술지 페이지: `https://jcr.clarivate.com/jcr-jp/journal-profile?journal=<JCR 약어>&year=<JCR 연도>`
+3. `IF(최신)`: 가장 최근 JCR 연도의 JIF.
+4. `JCR 상위%(최신)`: `100 − JIF Percentile`(소수 첫째 자리). **분야가 여러 개면 Percentile이 가장 높은(유리한) 분야.** 예: JIF Percentile 94.4 → `5.6`
+5. `IF(출판연도)`·`JCR 상위%(출판연도)`: 논문 출판 연도의 JCR 값(같은 규칙). 아직 발표되지 않은 연도는 비워 둡니다.
+6. 같은 학술지 논문은 모두 같은 값으로 맞춥니다. 새 학술지는 아래 표에 약어를 추가합니다.
+
+| 학술지 | JCR 약어 |
+|---|---|
+| IEEE Transactions on Instrumentation and Measurement | IEEE T INSTRUM MEAS |
+| IEEE Transactions on Industrial Electronics | IEEE T IND ELECTRON |
+| IEEE Transactions on Applied Superconductivity | IEEE T APPL SUPERCON |
+| IEEE Transactions on Power Delivery | IEEE T POWER DELIVER |
+| IEEE Sensors Journal | IEEE SENS J |
+| Measurement | MEASUREMENT |
+| Electric Power Systems Research | ELECTR POW SYST RES |
+| Applied Sciences | APPL SCI-BASEL |
+| Energies | ENERGIES |
+| Physica C: Superconductivity and its Applications | PHYSICA C |
+
+현재 값은 JCR 2025 기준입니다(2026-11 갱신).
 
 ## 관리자 페이지 (`apps-script/`)
 
