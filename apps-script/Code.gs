@@ -92,6 +92,10 @@ function apiSave(dataset, row, uploads) {
       if (idx < 0) fillJcrFromJournal_(next, rows);                 // 같은 학술지 최신 값 복사
       next['본인 역할'] = role_(next['저자']);
     }
+    if (dataset === 'patents' && !next['링크'] && next['상태'] === '등록' && next['국가'] === '대한민국'
+        && /^10-\d{4}-\d{7}$/.test(next['출원번호'])) {
+      next['링크'] = 'https://doi.org/10.8080/' + next['출원번호'].replace(/-/g, '');   // 특허청 DOI
+    }
     if (idx < 0 && dataset === 'papers' && next.DOI) {
       var key = next.DOI.replace(/^https?:\/\/(dx\.)?doi\.org\//i, '').toLowerCase();
       rows.forEach(function (r) {

@@ -143,12 +143,11 @@ var ME = '<?= email ?>';
 if (ME.charAt(0) === '<') ME = 'dev@local';
 var LIVE = !!(window.google && google.script && google.script.run);
 var SITE = LIVE ? 'https://eil-knu.github.io/' : '../';
-var DB = null, LOGOS = [], VIEW = 'todo', SEL = {}, FILTER = {}, DRAFT = null;
+var LOGO_V = Date.now(), DB = null, LOGOS = [], VIEW = 'todo', SEL = {}, FILTER = {}, DRAFT = null;
 
 var MENU = [
   ['todo', '채워야 할 항목'],
-  ['h', '홈페이지'], ['news', '소식'], ['members', '구성원'],
-  ['h', '실적 · 원장에 자동 반영'], ['papers', '논문'], ['patents', '특허'], ['projects', '과제']
+  ['news', '소식'], ['members', '구성원'], ['papers', '논문'], ['patents', '특허'], ['projects', '과제']
 ];
 var LABEL = { news: '소식', members: '구성원', papers: '논문', patents: '특허', projects: '과제' };
 var KINDS = ['국제 저널', '국제 학술대회', '국내 저널', '국내 학술대회'];
@@ -250,7 +249,21 @@ function drawMenu() {
     return '<button data-v="' + m[0] + '" class="' + (VIEW === m[0] ? 'on' : '') + '"><span>' + m[1] + '</span>' +
       (m[0] === 'todo' && n ? '<span class="badge">' + n + '</span>' : '') + '</button>';
   }).join('');
-  $$('#menu button').forEach(function (b) { b.onclick = function () { go(b.dataset.v); }; });
+  $$('#menu button').forEach(function (b) { b.onclick = function () { leave(function () { go(b.dataset.v); }); }; });
+}
+/* 저장하지 않은 내용이 있으면 한 번 더 눌러야 이동 */
+var ARMED = 0;
+function dirty() {
+  if (!DRAFT || !$('#ed') || DRAFT.orig === null) return false;
+  collect(VIEW);
+  return DRAFT.uploads.length > 0 || JSON.stringify(DRAFT.row) !== DRAFT.orig;
+}
+function leave(fn) {
+  if (VIEW !== 'todo' && dirty() && Date.now() - ARMED > 5000) {
+    ARMED = Date.now();
+    return toast('저장하지 않은 내용이 있습니다. 버리고 이동하려면 한 번 더 누르세요.', true);
+  }
+  ARMED = 0; fn();
 }
 function go(v, id, focus) {
   VIEW = v; DRAFT = null;
@@ -273,25 +286,33 @@ function draw() {
   v.innerHTML =
     '<div class="top"><div><h1>' + LABEL[k] + '</h1><p class="lead">' + lead(k) + '</p></div>' +
     '<button class="btn pri" id="new">＋ ' + LABEL[k] + ' 추가</button></div>' +
-    '<div class="grid"><section class="card list">' + tools(k) + '<div class="rows">' +
-    (rs.length ? rs.map(function (r) { return rowHtml(k, r); }).join('') : '<div class="empty">항목이 없습니다.</div>') +
-    '</div></section><section class="card ed" id="ed"></section></div>';
-  $('#new').onclick = function () { SEL[k] = 'new'; DRAFT = null; draw(); };
-  $$('.row', v).forEach(function (el) { el.onclick = function () { SEL[k] = el.dataset.id; DRAFT = null; draw(); if (innerWidth < 1100) $('#ed').scrollIntoView(); }; });
-  $$('.chip', v).forEach(function (c) { c.onclick = function () { FILTER[k] = Object.assign({}, FILTER[k], { kind: c.dataset.f }); draw(); }; });
-  var q = $('#q', v);
-  if (q) q.oninput = function () {
-    FILTER[k] = Object.assign({}, FILTER[k], { q: q.value });
-    var pos = q.selectionStart; draw(); var n = $('#q'); n.focus(); n.setSelectionRange(pos, pos);
-  };
+    '<div class="grid"><section class="card list">' + tools(k) + '<div class="rows" id="rows"></div>' +
+    '</section><section class="card ed" id="ed"></section></div>';
+  $('#new').onclick = function () { leave(function () { SEL[k] = 'new'; DRAFT = null; draw(); if (innerWidth < 1100) $('#ed').scrollIntoView(); }); };
+  $$('.chip', v).forEach(function (c) { c.onclick = function () {
+    FILTER[k] = Object.assign({}, FILTER[k], { kind: c.dataset.f });
+    $$('.chip', v).forEach(function (x) { x.classList.toggle('on', x === c); });
+    drawRows(k);
+  }; });
+  // 검색: 입력 칸은 그대로 두고 목록만 다시 그림 (한글 입력이 끊기지 않게)
+  $('#q', v).oninput = function () { FILTER[k] = Object.assign({}, FILTER[k], { q: this.value }); drawRows(k); };
+  drawRows(k);
   drawEditor(k, cur);
+}
+function drawRows(k) {
+  var rs = listRows(k), box = $('#rows');
+  box.innerHTML = rs.length ? rs.map(function (r) { return rowHtml(k, r); }).join('') : '<div class="empty">항목이 없습니다.</div>';
+  $$('.row', box).forEach(function (el) { el.onclick = function () {
+    if (SEL[k] === el.dataset.id) return;
+    leave(function () { SEL[k] = el.dataset.id; DRAFT = null; draw(); if (innerWidth < 1100) $('#ed').scrollIntoView(); });
+  }; });
 }
 
 function lead(k) {
   var r = rows(k);
   if (k === 'news') return '올린 소식 ' + r.length + '건. 최신 날짜가 홈페이지 맨 위에 나옵니다.';
   if (k === 'members') return '재학 ' + r.filter(function (x) { return x['상태'] !== '졸업'; }).length + '명 · 졸업 ' + r.filter(function (x) { return x['상태'] === '졸업'; }).length + '명. 졸업 처리하면 Members 페이지의 Alumni로 옮겨집니다.';
-  if (k === 'papers') return KINDS.map(function (c) { return c + ' ' + r.filter(function (x) { return x['구분'] === c; }).length; }).join(' · ') + '편. IF·JCR은 자동으로 채워집니다.';
+  if (k === 'papers') return KINDS.map(function (c) { return c + ' ' + r.filter(function (x) { return x['구분'] === c; }).length; }).join(' · ') + '편. IF·JCR은 교수님이 따로 갱신합니다.';
   if (k === 'patents') return '등록 ' + r.filter(function (x) { return x['상태'] === '등록'; }).length + '건 · 출원 ' + r.filter(function (x) { return x['상태'] !== '등록'; }).length + '건. 출원 특허가 등록되면 등록번호와 등록일만 추가하세요.';
   return '총 ' + r.length + '건. 총 연구비는 실적원장에만 들어가고 홈페이지에는 보이지 않습니다.';
 }
@@ -367,7 +388,7 @@ var FIELDS = {
     { c: '출원번호', w: 's3 k' }, { c: '출원일', type: 'date', w: 's3 k' },
     { c: '등록번호', w: 's3 k', ph: '등록되면 입력' }, { c: '등록일', type: 'date', w: 's3 k' },
     { c: '출원인(권리자)', warn: true, ph: '예: 국립공주대학교 산학협력단' },
-    { c: '링크', type: 'url', hint: '선택 · 특허 정보 페이지' }
+    { c: '링크', type: 'url', hint: '선택 · 비우면 국내 등록 특허는 자동 생성' }
   ],
   projects: [
     { c: '과제명(국문)', type: 'textarea' }, { c: '과제명(영문)', type: 'textarea' },
@@ -392,7 +413,7 @@ function drawEditor(k, cur) {
   var ed = $('#ed');
   if (!DRAFT || DRAFT.key !== k + ':' + (cur ? cur.ID : 'new')) {
     var base = cur ? Object.assign({}, cur) : DEFAULTS[k]();
-    DRAFT = { key: k + ':' + (cur ? cur.ID : 'new'), row: base, uploads: [], previews: {},
+    DRAFT = { key: k + ':' + (cur ? cur.ID : 'new'), row: base, uploads: [], previews: {}, orig: null,
               authors: k === 'papers' ? parseAuthors(base['저자']) : null, confirm: false };
     if (DRAFT.authors && !DRAFT.authors.length) DRAFT.authors = [{ name: '', first: false, corr: false }];
   }
@@ -411,6 +432,7 @@ function drawEditor(k, cur) {
     '</div><button class="btn pri" id="save">저장</button></div>';
   ed.innerHTML = html;
   bindEditor(k, cur);
+  if (d.orig === null) { collect(k); d.orig = JSON.stringify(d.row); }
 }
 
 function fieldHtml(k, f, r, d) {
@@ -436,7 +458,7 @@ function fieldHtml(k, f, r, d) {
       return '<div class="note" style="grid-column:span 6">🔒 <b>IF · JCR</b>은 직접 입력하지 않습니다. ' +
         (has ? '현재 값: IF ' + esc(r['IF(최신)'] || '—') + ' · 상위 ' + esc(r['JCR 상위%(최신)'] || '—') + '%' +
           (r['IF(출판연도)'] ? ' (출판연도 IF ' + esc(r['IF(출판연도)']) + ' · 상위 ' + esc(r['JCR 상위%(출판연도)']) + '%)' : '')
-          : (r['구분'] === '국제 저널' ? 'JCR 대기 · 학교 네트워크에서 자동으로 채워집니다. 같은 학술지가 원장에 있으면 저장할 때 최신 값이 먼저 들어갑니다.' : '학술대회·국내 논문은 해당 없음')) + '</div>';
+          : (r['구분'] === '국제 저널' ? 'JCR 대기 · 학교 네트워크에서 교수님이 따로 갱신합니다. 같은 학술지가 원장에 있으면 저장할 때 그 학술지의 최신 값이 먼저 들어갑니다.' : '학술대회·국내 논문은 해당 없음')) + '</div>';
     default:
       return '<label class="' + cls + '">' + label + '<input type="' + (f.type || 'text') + '" value="' + esc(v) + '"' + attrs + '></label>';
   }
@@ -462,7 +484,7 @@ function photoHtml(r, d) {
 function logoHtml(r) {
   var v = r['기관 마크'];
   return '<div style="grid-column:span 6;display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:500">기관 로고</span><div class="logos">' +
-    LOGOS.map(function (k) { return '<button data-logo="' + esc(k) + '" class="' + (k === v ? 'on' : '') + '" title="' + esc(k) + '"><img src="' + SITE + 'assets/img/agency/' + esc(k) + '.png?v=' + rand() + '" alt="' + esc(k) + '"></button>'; }).join('') +
+    LOGOS.map(function (k) { return '<button data-logo="' + esc(k) + '" class="' + (k === v ? 'on' : '') + '" title="' + esc(k) + '"><img src="' + SITE + 'assets/img/agency/' + esc(k) + '.png?v=' + LOGO_V + '" alt="' + esc(k) + '"></button>'; }).join('') +
     '<button data-logo="" class="' + (!v ? 'on' : '') + '" title="로고 없음" style="font-size:12px;color:var(--sub)">없음</button>' +
     '<label class="add" style="width:48px;height:48px;min-height:0" title="새 로고 올리기">＋<input type="file" id="logoFile" accept="image/png,image/jpeg,image/svg+xml" hidden></label></div>' +
     '<small style="color:var(--sub);font-size:12px">등록된 로고에서 고르거나 ＋로 새 기관 로고(배경이 투명한 PNG 권장)를 올리세요.</small></div>';
@@ -635,13 +657,13 @@ function drawTodo(v) {
     '<div class="cards">' +
     c(t.some(function (x) { return x.k === 'projects'; }) ? 'a' : '', '과제 총 연구비', t.filter(function (x) { return x.k === 'projects'; }).length, '건', '과제마다 한 번만 입력') +
     c(t.some(function (x) { return x.k === 'patents'; }) ? 'a' : '', '특허 출원인', t.filter(function (x) { return x.k === 'patents'; }).length, '건', '출원·등록 특허의 권리자') +
-    c('', 'JCR 대기', jp.length, '편', '자동으로 채워짐') +
+    c('', 'JCR 대기', jp.length, '편', '입력 불필요 · 따로 갱신') +
     c('', '게재일', noDate, '편', '선택 · 비워 둬도 됨') + '</div>' +
     '<section class="card list">' + (t.length ? t.map(function (x) {
       return '<div class="row" data-k="' + x.k + '" data-id="' + esc(x.id) + '" data-f="' + esc(x.f) + '"><span class="tag g" style="min-width:56px;text-align:center">' + esc(x.id) + '</span>' +
         '<div class="main"><span class="t">' + esc(x.t) + '</span><span class="s">' + LABEL[x.k] + '</span></div><span class="tag a">' + esc(x.label) + '</span><button class="btn sm">채우기</button></div>';
     }).join('') : '<div class="empty">비어 있는 칸이 없습니다 🎉</div>') + '</section>' +
-    '<div class="note">JCR 대기 논문은 직접 입력하지 않아도 됩니다. 학교 네트워크에서 자동으로 채워지고, 매년 JCR 발표 뒤 출판연도 값도 갱신됩니다. 게재일은 학술지가 날짜를 공개하지 않은 경우가 많아 비워 둬도 됩니다.</div>';
+    '<div class="note">JCR 대기 논문은 직접 입력하지 않아도 됩니다. JCR은 학교 네트워크에서만 열리므로 교수님이 따로 갱신합니다. 게재일은 학술지가 날짜를 공개하지 않은 경우가 많아 비워 둬도 됩니다.</div>';
   $$('.row', v).forEach(function (el) { el.onclick = function () { go(el.dataset.k, el.dataset.id, el.dataset.f); }; });
 }
 
