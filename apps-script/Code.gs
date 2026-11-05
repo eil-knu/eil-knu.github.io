@@ -322,7 +322,7 @@ function fmtAppNo_(a) {
   var m;
   if ((m = a.match(/^KR10(\d{4})(\d{7})/))) return '10-' + m[1] + '-' + m[2];
   if ((m = a.match(/^([A-Z]{2})(\d{4})(\d{6})W$/))) return 'PCT/' + m[1] + m[2] + '/' + m[3];
-  if ((m = a.match(/^US(\d{2})(\d{3})(\d{3})/))) return m[1] + '/' + m[2] + ',' + m[3];
+  if ((m = a.match(/^US\s?(\d{2})\/?(\d{3}),?(\d{3})/))) return 'US ' + m[1] + '/' + m[2] + ',' + m[3];
   if ((m = a.match(/^ATA(\d+\/\d{4})/))) return 'A ' + m[1];
   return a;
 }
