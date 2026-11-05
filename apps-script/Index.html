@@ -332,6 +332,7 @@ function listRows(k) {
   if (q) r = r.filter(function (x) { return Object.keys(x).some(function (c) { return String(x[c]).toLowerCase().indexOf(q) >= 0; }); });
   if (k === 'news') r.sort(function (a, b) { return String(b['날짜']).localeCompare(a['날짜']); });
   if (k === 'papers') r.sort(function (a, b) { return (b['연도'] - a['연도']) || ((+b['월'] || 0) - (+a['월'] || 0)); });
+  if (k === 'patents') r.sort(function (a, b) { return String(b['등록일'] || b['출원일']).localeCompare(a['등록일'] || a['출원일']); });
   if (k === 'projects') r.sort(function (a, b) { return String(b['시작']).localeCompare(a['시작']); });
   return r;
 }
