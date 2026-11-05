@@ -38,7 +38,7 @@ function doGet() {
       '<div style="font-family:sans-serif;max-width:420px;margin:80px auto;line-height:1.7">' +
       '<h2 style="color:#1D2760">접근 권한이 없습니다</h2>' +
       '<p>' + (email ? esc_(email) + ' 계정은 관리자로 등록되어 있지 않습니다.' : '구글 계정 정보를 확인할 수 없습니다.') +
-      '<br>교수님께 이메일 등록을 요청하세요.</p></div>').setTitle('EIL 관리자');
+      '<br>교수님께 이메일 등록을 요청하세요.</p></div>').setTitle('홈페이지 관리 | 에너지정보처리연구실');
   }
   // 화면(Index.html)과 데이터를 GitHub에서 한꺼번에 읽어 페이지에 넣습니다.
   // 화면만 고칠 때는 다시 배포할 필요가 없습니다. GitHub을 못 읽으면 이 프로젝트의 Index 파일을 씁니다.
@@ -53,7 +53,7 @@ function doGet() {
   }
   t.boot = boot ? JSON.stringify(boot).replace(/</g, '\\u003c') : '';
   t.email = email;
-  return t.evaluate().setTitle('EIL 관리자')
+  return t.evaluate().setTitle('홈페이지 관리 | 에너지정보처리연구실')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)   // eil-knu.github.io/admin.html 안에 넣어 쓰기
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
