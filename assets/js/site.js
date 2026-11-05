@@ -9,7 +9,6 @@
     news: 'news.csv', members: 'members.csv'
   };
   var MONTHS = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.'];
-  var AGENCY_LOGOS = ['ketep', 'knu', 'kdi', 'kepco', 'nrf', 'etri', 'dongguk'];
 
   /* ---------- 공통 유틸 ---------- */
   function esc(s) {
@@ -155,8 +154,8 @@
   function projectCard(p, tag) {
     tag = tag || 'h3';
     var pi = /책임/.test(p.role);
-    var logo = AGENCY_LOGOS.indexOf(p.key) >= 0
-      ? '<img src="assets/img/agency/' + p.key + '.png" alt="" loading="lazy">' : '';
+    var logo = /^[a-z0-9-]+$/.test(p.key)
+      ? '<img src="assets/img/agency/' + p.key + '.png" alt="" loading="lazy" onerror="this.remove()">' : '';
     return '<article class="proj">' +
       '<div class="meta"><span class="pill' + (pi ? ' pi' : '') + '">' + esc(p.role) + '</span>' +
       '<span>' + esc(ym(p.start)) + ' – ' + esc(ym(p.end)) + '</span></div>' +

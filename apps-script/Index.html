@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIL 관리자</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#1D2760;--navy2:#2E3A7A;--teal:#007A70;--teal-d:#00665E;--teal-bg:#E8F3F1;--mint:#7FD3C6;--ink:#2B2F3A;--sub:#3F4450;--line:#E3E8EC;--field:#DCE3E7;--bg:#F4F7F8;--amber-bg:#FFF8EA;--amber-line:#F2D49B;--amber:#7A5000;--red:#B42318;--red-bg:#FCEDEC;--red-line:#E8B4B0}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:'Noto Sans KR',system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:15px}
+a{color:var(--navy)}
+button,input,select,textarea{font-family:inherit;font-size:15px;color:var(--ink)}
+.app{display:flex;min-height:100%}
+nav.side{width:232px;flex:none;background:var(--navy);color:#fff;padding:28px 16px;display:flex;flex-direction:column;gap:24px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px;font-weight:700}
+.menu{display:flex;flex-direction:column;gap:4px}
+.menu .h{padding:14px 12px 6px;font-size:12px;letter-spacing:.06em;color:#B9C2E6}
+.menu button{all:unset;cursor:pointer;padding:11px 12px;border-radius:8px;color:#D6DBF0;display:flex;justify-content:space-between;align-items:center}
+.menu button:hover{background:#26316E}
+.menu button.on{background:var(--navy2);color:#fff;font-weight:700}
+.badge{min-width:24px;padding:1px 7px;border-radius:999px;background:#F2B544;color:var(--navy);font-size:12px;font-weight:700;text-align:center}
+.foot{margin-top:auto;display:flex;flex-direction:column;gap:8px;padding:0 12px;font-size:13px;color:#B9C2E6;word-break:break-all}
+.foot a{color:var(--mint)}
+main{flex:1;min-width:0;padding:32px 40px 60px;display:flex;flex-direction:column;gap:20px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+h1{margin:0;font-size:26px;color:var(--navy)}
+.lead{margin:6px 0 0;font-size:14px;color:var(--sub)}
+.btn{height:44px;padding:0 20px;border-radius:8px;border:1px solid var(--field);background:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:14px}
+.btn.pri{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:700}
+.btn.pri:disabled{opacity:.6;cursor:wait}
+.btn.del{border-color:var(--red-line);color:var(--red)}
+.btn.redf{background:var(--red);border-color:var(--red);color:#fff;font-weight:700}
+.btn.sm{height:34px;padding:0 12px;font-size:13px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 460px;gap:24px;align-items:start}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px}
+.list{overflow:hidden}
+.tools{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tools input{flex:1;min-width:160px;height:38px;padding:0 12px;border:1px solid var(--field);border-radius:8px}
+.chip{all:unset;cursor:pointer;padding:6px 12px;border-radius:999px;background:var(--bg);font-size:13px}
+.chip.on{background:var(--navy);color:#fff}
+.rows{max-height:calc(100vh - 230px);overflow:auto}
+.row{display:flex;gap:12px;align-items:center;padding:10px 16px;border-top:1px solid var(--line);cursor:pointer}
+.row:first-child{border-top:0}
+.row:hover{background:#FAFCFC}
+.row.sel{background:#F3FAF8}
+.row .main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.row .t{font-size:14px;font-weight:500;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .s{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row.hidden .t{color:#8A92A6}
+.thumb{width:56px;height:42px;flex:none;border-radius:6px;background:#D5DFE4;object-fit:cover}
+.thumb.p{width:36px;height:48px}
+.logo{width:40px;height:40px;flex:none;border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;background:#fff}
+.logo img{max-width:30px;max-height:30px}
+.tag{flex:none;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;background:var(--teal-bg);color:var(--teal-d)}
+.tag.a{background:#FFF4DE;color:var(--amber)}
+.tag.g{background:var(--bg);color:var(--sub)}
+.ed{padding:22px;display:flex;flex-direction:column;gap:14px;position:sticky;top:16px}
+.ed h2{margin:0;font-size:18px;color:var(--navy)}
+.f{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.f label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;grid-column:span 6}
+.f label.s2{grid-column:span 2}.f label.s3{grid-column:span 3}.f label.s4{grid-column:span 4}
+.f label small{font-weight:400;color:var(--sub)}
+.f input,.f select,.f textarea{height:42px;padding:0 10px;border:1px solid var(--field);border-radius:8px;background:#fff;width:100%}
+.f textarea{height:auto;padding:10px;resize:vertical;line-height:1.5}
+.f .warn input{border-color:#E6C27A;background:var(--amber-bg)}
+.f .auto input,.f .auto select{border-color:#9ED3C9;background:#F3FAF8}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px}
+.chk input{width:18px;height:18px;accent-color:var(--teal)}
+.acts{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding-top:4px}
+.acts .r{display:flex;gap:8px}
+.confirm{padding:14px;border-radius:10px;background:var(--red-bg);border:1px solid var(--red-line);display:flex;flex-direction:column;gap:10px;font-size:14px;color:#7A1A12}
+.confirm .r{display:flex;gap:8px;justify-content:flex-end}
+.note{padding:12px 14px;border-radius:10px;background:var(--bg);font-size:13px;line-height:1.6;color:var(--sub)}
+.note.amber{background:var(--amber-bg);border:1px solid var(--amber-line);color:var(--amber)}
+.doi{display:flex;gap:8px;padding:14px;border-radius:10px;background:var(--teal-bg);border:1px solid #CDE6E1;align-items:center}
+.doi b{color:var(--teal-d);font-size:14px}
+.doi input{flex:1;height:40px;padding:0 10px;border:1px solid #B9D9D2;border-radius:8px;min-width:0}
+.authors{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.au{display:grid;grid-template-columns:28px minmax(0,1fr) 54px 54px 64px;gap:8px;align-items:center;padding:6px 10px;border-top:1px solid var(--line);font-size:13px}
+.au:first-child{border-top:0;background:var(--bg);font-weight:700;color:var(--sub);padding:8px 10px}
+.au input[type=text]{height:34px;padding:0 8px;border:1px solid var(--field);border-radius:6px;width:100%}
+.au input[type=checkbox]{width:18px;height:18px;accent-color:var(--teal);justify-self:center}
+.au .mv{display:flex;gap:2px}
+.au .mv button{all:unset;cursor:pointer;width:20px;text-align:center;color:var(--sub)}
+.au.me{background:#F3FAF8}
+.preview{padding:10px 12px;border-radius:8px;background:var(--bg);font-size:13px;line-height:1.6}
+.photos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.ph{position:relative;aspect-ratio:4/3;border-radius:8px;overflow:hidden;background:#D5DFE4}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph .c{position:absolute;left:6px;bottom:6px;padding:1px 7px;border-radius:999px;background:var(--navy);color:#fff;font-size:11px;font-weight:700}
+.ph .x{position:absolute;right:4px;top:4px;display:flex;gap:4px}
+.ph .x button{all:unset;cursor:pointer;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:13px;text-align:center;line-height:24px}
+.add{border:1.5px dashed #9FB0BA;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-size:13px;color:var(--sub);min-height:44px}
+.logos{display:flex;flex-wrap:wrap;gap:8px}
+.logos button{all:unset;cursor:pointer;width:48px;height:48px;border:1px solid var(--field);border-radius:8px;display:flex;align-items:center;justify-content:center;background:#fff}
+.logos button.on{border:2px solid var(--teal)}
+.logos img{max-width:34px;max-height:34px}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.stat{padding:18px 20px;display:flex;flex-direction:column;gap:4px}
+.stat .n{font-size:30px;font-weight:700}
+.stat.a{border-color:var(--amber-line)}.stat.a .n{color:#8A5A00}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);padding:12px 18px;border-radius:10px;background:var(--navy);color:#fff;font-size:14px;box-shadow:0 6px 24px rgba(0,0,0,.18);z-index:9;max-width:calc(100% - 32px)}
+.toast.err{background:var(--red)}
+.loading{padding:60px;text-align:center;color:var(--sub)}
+.empty{padding:30px;text-align:center;color:var(--sub);font-size:14px}
+@media (max-width:1100px){.grid{grid-template-columns:1fr}.ed{position:static}.rows{max-height:420px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:820px){
+  .app{flex-direction:column}
+  nav.side{width:auto;height:auto;position:sticky;top:0;z-index:5;padding:10px 12px;gap:8px}
+  .brand{padding:0}
+  .menu{flex-direction:row;overflow-x:auto;gap:2px}
+  .menu .h{display:none}
+  .menu button{white-space:nowrap;padding:8px 12px}
+  .foot{display:none}
+  main{padding:18px 16px 60px}
+  .f label.s2,.f label.s3,.f label.s4{grid-column:span 6}
+  .f label.s2.k,.f label.s3.k{grid-column:span 3}
+  .photos{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="side" aria-label="관리 메뉴">
+    <div class="brand">
+      <svg width="28" height="28" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="none" stroke="#7FD3C6" stroke-width="2.5"/><path d="M23 7 L13 22 H20 L17 33 L27 18 H20 Z" fill="#7FD3C6"/></svg>
+      EIL 관리자
+    </div>
+    <div class="menu" id="menu"></div>
+    <div class="foot">
+      <a href="https://eil-knu.github.io" target="_blank">홈페이지 보기 ↗</a>
+      <a href="https://docs.google.com/spreadsheets/d/1WIOpraTPjBLxHhzIMeyAW7FGneSw9poE4nHvH5KJbSM" target="_blank">실적원장 열기 ↗</a>
+      <span id="me"></span>
+    </div>
+  </nav>
+  <main id="view"><div class="loading">불러오는 중…</div></main>
+</div>
+<script>
+var ME = '<?= email ?>';
+if (ME.indexOf('<?') === 0) ME = 'dev@local';
+var LIVE = !!(window.google && google.script && google.script.run);
+var SITE = LIVE ? 'https://eil-knu.github.io/' : '../';
+var DB = null, LOGOS = [], VIEW = 'todo', SEL = {}, FILTER = {}, DRAFT = null;
+
+var MENU = [
+  ['todo', '채워야 할 항목'],
+  ['h', '홈페이지'], ['news', '소식'], ['members', '구성원'],
+  ['h', '실적 · 원장에 자동 반영'], ['papers', '논문'], ['patents', '특허'], ['projects', '과제']
+];
+var LABEL = { news: '소식', members: '구성원', papers: '논문', patents: '특허', projects: '과제' };
+var KINDS = ['국제 저널', '국제 학술대회', '국내 저널', '국내 학술대회'];
+var COURSES = ['박사과정', '석박통합과정', '석사과정', '학부연구생', '박사후연구원'];
+
+/* ---------- 서버 호출 ---------- */
+function call(fn) {
+  var args = [].slice.call(arguments, 1);
+  return new Promise(function (res, rej) {
+    if (LIVE) google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn].apply(null, args);
+    else MOCK[fn].apply(null, args).then(res, rej);
+  });
+}
+
+/* ---------- 도우미 ---------- */
+function $(s, r) { return (r || document).querySelector(s); }
+function $$(s, r) { return [].slice.call((r || document).querySelectorAll(s)); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function rows(k) { return DB[k].rows; }
+function find(k, id) { return rows(k).filter(function (r) { return r.ID === id; })[0]; }
+function today() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+function split(s) { return String(s || '').split(/\s*[;\n]\s*/).filter(String); }
+function imgSrc(name, dir) {
+  name = String(name || '').trim();
+  if (!name) return '';
+  var d = name.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]{20,})/);
+  if (d) return 'https://lh3.googleusercontent.com/d/' + d[1] + '=w800';
+  return /^https?:/.test(name) ? name : SITE + 'assets/img/' + dir + '/' + name;
+}
+function toast(msg, err) {
+  var t = document.createElement('div');
+  t.className = 'toast' + (err ? ' err' : '');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function () { t.remove(); }, err ? 7000 : 4000);
+}
+function errMsg(e) { return String((e && e.message) || e).replace(/^Error:\s*/, ''); }
+function rand() { return Math.random().toString(36).slice(2, 6); }
+
+/* 사진 줄이기 → base64 */
+function shrink(file, max, type) {
+  return new Promise(function (res, rej) {
+    var img = new Image(), url = URL.createObjectURL(file);
+    img.onload = function () {
+      var s = Math.min(1, max / Math.max(img.width, img.height));
+      var c = document.createElement('canvas');
+      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      var g = c.getContext('2d');
+      if (type === 'image/jpeg') { g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); }
+      g.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      var data = c.toDataURL(type, 0.86);
+      res({ dataUrl: data, base64: data.split(',')[1] });
+    };
+    img.onerror = function () { rej(new Error('사진을 읽을 수 없습니다.')); };
+    img.src = url;
+  });
+}
+
+/* ---------- 저자 ---------- */
+function parseAuthors(s) {
+  return String(s || '').split(/,\s*(?:and\s+)?|\s+and\s+|\s+및\s+/).map(function (a) { return a.trim(); }).filter(String)
+    .map(function (a) { return { name: a.replace(/[¹*]/g, '').trim(), first: a.indexOf('¹') >= 0, corr: a.indexOf('*') >= 0 }; });
+}
+function buildAuthors(list) {
+  var n = list.filter(function (a) { return a.name.trim(); }).map(function (a) { return a.name.trim() + (a.first ? '¹' : '') + (a.corr ? '*' : ''); });
+  if (n.length < 2) return n.join('');
+  if (/[가-힣]/.test(n.join(''))) return n.slice(0, -1).join(', ') + ' 및 ' + n[n.length - 1];
+  if (n.length === 2) return n[0] + ' and ' + n[1];
+  return n.slice(0, -1).join(', ') + ', and ' + n[n.length - 1];
+}
+function isMe(name) { return /G\.-Y\. Kwon|권구영/.test(name); }
+function role(s) {
+  var p = parseAuthors(s), me = -1;
+  p.forEach(function (a, i) { if (me < 0 && isMe(a.name)) me = i; });
+  if (me < 0) return '(교수님이 저자에 없음)';
+  var f = p.filter(function (a) { return a.first; }).length, c = p.filter(function (a) { return a.corr; }).length, out = [];
+  if (p[me].first) out.push(f > 1 ? '공동 제1저자' : '제1저자'); else if (me === 0) out.push('제1저자');
+  if (p[me].corr) out.push(c > 1 ? '공동 교신저자' : '교신저자');
+  return out.join(' · ') || '공동저자';
+}
+
+/* ---------- 할 일 ---------- */
+function todos() {
+  var list = [];
+  rows('projects').forEach(function (r) { if (!r['총 연구비 (천원)']) list.push({ k: 'projects', id: r.ID, t: r['과제명(국문)'], f: '총 연구비 (천원)', label: '총 연구비' }); });
+  rows('patents').forEach(function (r) { if (!r['출원인(권리자)']) list.push({ k: 'patents', id: r.ID, t: r['발명의 명칭'], f: '출원인(권리자)', label: '출원인' }); });
+  return list;
+}
+function jcrPending() {
+  return rows('papers').filter(function (r) { return r['구분'] === '국제 저널' && r['등재 구분'] === 'SCIE' && !r['JCR 상위%(최신)']; });
+}
+
+/* ---------- 메뉴 ---------- */
+function drawMenu() {
+  var n = todos().length;
+  $('#menu').innerHTML = MENU.map(function (m) {
+    if (m[0] === 'h') return '<span class="h">' + m[1] + '</span>';
+    return '<button data-v="' + m[0] + '" class="' + (VIEW === m[0] ? 'on' : '') + '"><span>' + m[1] + '</span>' +
+      (m[0] === 'todo' && n ? '<span class="badge">' + n + '</span>' : '') + '</button>';
+  }).join('');
+  $$('#menu button').forEach(function (b) { b.onclick = function () { go(b.dataset.v); }; });
+}
+function go(v, id, focus) {
+  VIEW = v; DRAFT = null;
+  if (id !== undefined) SEL[v] = id;
+  drawMenu(); draw();
+  window.scrollTo(0, 0);
+  if (focus) setTimeout(function () {
+    var el = $('[data-c="' + focus + '"]');
+    if (el) { el.scrollIntoView({ block: 'center' }); el.focus(); }
+  }, 50);
+}
+
+/* ---------- 화면 ---------- */
+function draw() {
+  var v = $('#view');
+  if (VIEW === 'todo') return drawTodo(v);
+  var k = VIEW, rs = listRows(k), id = SEL[k];
+  var cur = id === 'new' ? null : (find(k, id) || null);
+  if (!cur && id !== 'new') { cur = rs[0] || null; SEL[k] = cur ? cur.ID : 'new'; }
+  v.innerHTML =
+    '<div class="top"><div><h1>' + LABEL[k] + '</h1><p class="lead">' + lead(k) + '</p></div>' +
+    '<button class="btn pri" id="new">＋ ' + LABEL[k] + ' 추가</button></div>' +
+    '<div class="grid"><section class="card list">' + tools(k) + '<div class="rows">' +
+    (rs.length ? rs.map(function (r) { return rowHtml(k, r); }).join('') : '<div class="empty">항목이 없습니다.</div>') +
+    '</div></section><section class="card ed" id="ed"></section></div>';
+  $('#new').onclick = function () { SEL[k] = 'new'; DRAFT = null; draw(); };
+  $$('.row', v).forEach(function (el) { el.onclick = function () { SEL[k] = el.dataset.id; DRAFT = null; draw(); if (innerWidth < 1100) $('#ed').scrollIntoView(); }; });
+  $$('.chip', v).forEach(function (c) { c.onclick = function () { FILTER[k] = Object.assign({}, FILTER[k], { kind: c.dataset.f }); draw(); }; });
+  var q = $('#q', v);
+  if (q) q.oninput = function () {
+    FILTER[k] = Object.assign({}, FILTER[k], { q: q.value });
+    var pos = q.selectionStart; draw(); var n = $('#q'); n.focus(); n.setSelectionRange(pos, pos);
+  };
+  drawEditor(k, cur);
+}
+
+function lead(k) {
+  var r = rows(k);
+  if (k === 'news') return '올린 소식 ' + r.length + '건. 최신 날짜가 홈페이지 맨 위에 나옵니다.';
+  if (k === 'members') return '재학 ' + r.filter(function (x) { return x['상태'] !== '졸업'; }).length + '명 · 졸업 ' + r.filter(function (x) { return x['상태'] === '졸업'; }).length + '명. 졸업 처리하면 Members 페이지의 Alumni로 옮겨집니다.';
+  if (k === 'papers') return KINDS.map(function (c) { return c + ' ' + r.filter(function (x) { return x['구분'] === c; }).length; }).join(' · ') + '편. IF·JCR은 자동으로 채워집니다.';
+  if (k === 'patents') return '등록 ' + r.filter(function (x) { return x['상태'] === '등록'; }).length + '건 · 출원 ' + r.filter(function (x) { return x['상태'] !== '등록'; }).length + '건. 출원 특허가 등록되면 등록번호와 등록일만 추가하세요.';
+  return '총 ' + r.length + '건. 총 연구비는 실적원장에만 들어가고 홈페이지에는 보이지 않습니다.';
+}
+
+function tools(k) {
+  var f = FILTER[k] || {}, chips = '';
+  if (k === 'papers') chips = ['전체'].concat(KINDS).map(function (c) { return '<button class="chip' + ((f.kind || '전체') === c ? ' on' : '') + '" data-f="' + c + '">' + c + '</button>'; }).join('');
+  return '<div class="tools"><input id="q" type="search" placeholder="검색" value="' + esc(f.q || '') + '">' + chips + '</div>';
+}
+
+function listRows(k) {
+  var f = FILTER[k] || {}, q = String(f.q || '').toLowerCase(), r = rows(k).slice();
+  if (k === 'papers' && f.kind && f.kind !== '전체') r = r.filter(function (x) { return x['구분'] === f.kind; });
+  if (q) r = r.filter(function (x) { return Object.keys(x).some(function (c) { return String(x[c]).toLowerCase().indexOf(q) >= 0; }); });
+  if (k === 'news') r.sort(function (a, b) { return String(b['날짜']).localeCompare(a['날짜']); });
+  if (k === 'papers') r.sort(function (a, b) { return (b['연도'] - a['연도']) || ((+b['월'] || 0) - (+a['월'] || 0)); });
+  if (k === 'projects') r.sort(function (a, b) { return String(b['시작']).localeCompare(a['시작']); });
+  return r;
+}
+
+function rowHtml(k, r) {
+  var cls = 'row' + (SEL[k] === r.ID ? ' sel' : '') + (r['홈페이지 표시'] === 'Y' ? '' : ' hidden');
+  var left = '', t = '', s = '', tag = '';
+  if (k === 'news') {
+    var p = split(r['사진'])[0];
+    left = p ? '<img class="thumb" src="' + esc(imgSrc(p, 'news')) + '" alt="" loading="lazy">' : '<div class="thumb"></div>';
+    t = r['제목']; s = r['날짜'] + (split(r['사진']).length ? ' · 사진 ' + split(r['사진']).length + '장' : '');
+  } else if (k === 'members') {
+    left = r['사진'] ? '<img class="thumb p" src="' + esc(imgSrc(r['사진'], 'people')) + '" alt="" loading="lazy">' : '<div class="thumb p"></div>';
+    t = r['이름'] + ' · ' + r['영문 이름']; s = r['과정'] + ' · ' + r['연구 분야'];
+    tag = r['상태'] === '졸업' ? '<span class="tag g">졸업</span>' : '<span class="tag">재학</span>';
+  } else if (k === 'papers') {
+    t = r['논문 제목']; s = r.ID + ' · ' + r['연도'] + ' · ' + r['저널·학회명'];
+    tag = r['JCR 상위%(최신)'] ? '<span class="tag g">상위 ' + esc(r['JCR 상위%(최신)']) + '%</span>' : '';
+  } else if (k === 'patents') {
+    t = r['발명의 명칭']; s = r.ID + ' · ' + r['국가'] + ' · ' + (r['등록번호'] ? '등록 ' + r['등록번호'] : '출원 ' + r['출원번호']);
+    tag = r['상태'] === '등록' ? '<span class="tag">등록</span>' : '<span class="tag a">출원</span>';
+  } else {
+    var key = r['기관 마크'];
+    left = '<div class="logo">' + (key ? '<img src="' + SITE + 'assets/img/agency/' + esc(key) + '.png" alt="">' : '') + '</div>';
+    t = r['과제명(국문)']; s = r['시작'] + '–' + r['종료'] + ' · ' + r['역할'];
+    tag = r['총 연구비 (천원)'] ? '' : '<span class="tag a">연구비 미입력</span>';
+  }
+  if (r['홈페이지 표시'] !== 'Y') tag += '<span class="tag g">숨김</span>';
+  return '<div class="' + cls + '" data-id="' + esc(r.ID) + '">' + left + '<div class="main"><span class="t">' + esc(t) + '</span><span class="s">' + esc(s) + '</span></div>' + tag + '</div>';
+}
+
+/* ---------- 입력 칸 정의 ---------- */
+var FIELDS = {
+  news: [
+    { c: '날짜', type: 'date', w: 's2 k' }, { c: '링크', type: 'url', w: 's4', hint: '선택' },
+    { c: '제목', type: 'textarea' }, { c: '사진', type: 'photos' }
+  ],
+  members: [
+    { c: '사진', type: 'photo' },
+    { c: '이름', w: 's3 k' }, { c: '영문 이름', w: 's3 k', ph: 'Hyung Jun Jung' },
+    { c: '과정', type: 'select', opts: COURSES, w: 's3 k' }, { c: '상태', type: 'select', opts: ['재학', '졸업'], w: 's3 k' },
+    { c: '이메일', type: 'email' }, { c: '연구 분야', ph: 'Cable Fault Diagnosis · Reflectometry' },
+    { c: '비고', hint: '졸업생의 현재 소속 등 · Alumni에 표시' }
+  ],
+  papers: [
+    { c: '구분', type: 'select', opts: KINDS, w: 's2' }, { c: '연도', w: 's2 k', ph: '2026' }, { c: '월', w: 's2 k', ph: '10' },
+    { c: '논문 제목', type: 'textarea' }, { c: '저자', type: 'authors' },
+    { c: '저널·학회명' },
+    { c: 'Vol.', w: 's2 k', label: '권' }, { c: 'No.', w: 's2 k', label: '호' }, { c: '페이지/Art. No.', w: 's2', label: '페이지/Art. No.' },
+    { c: '게재일', type: 'date', w: 's3 k', hint: '선택' }, { c: 'ISSN/ISBN', w: 's3 k' },
+    { c: 'DOI', type: 'url', w: 's4', ph: 'https://doi.org/…' }, { c: '등재 구분', type: 'select', opts: ['', 'SCIE', 'SCOPUS', 'KCI', '기타'], w: 's2' },
+    { type: 'jcr' }
+  ],
+  patents: [
+    { c: '구분', type: 'select', opts: ['국내', '국외'], w: 's2 k' }, { c: '상태', type: 'select', opts: ['출원', '등록'], w: 's2 k' }, { c: '국가', w: 's2', ph: '대한민국' },
+    { c: '발명의 명칭', type: 'textarea' }, { c: '발명자', hint: '쉼표로 구분, 마지막은 "및"' },
+    { c: '출원번호', w: 's3 k' }, { c: '출원일', type: 'date', w: 's3 k' },
+    { c: '등록번호', w: 's3 k', ph: '등록되면 입력' }, { c: '등록일', type: 'date', w: 's3 k' },
+    { c: '출원인(권리자)', warn: true, ph: '예: 국립공주대학교 산학협력단' },
+    { c: '링크', type: 'url', hint: '선택 · 특허 정보 페이지' }
+  ],
+  projects: [
+    { c: '과제명(국문)', type: 'textarea' }, { c: '과제명(영문)', type: 'textarea' },
+    { c: '전문기관', w: 's3', ph: '한국연구재단 (NRF)' }, { c: '사업명', w: 's3', hint: '선택' },
+    { c: '기관 마크', type: 'logo' },
+    { c: '시작', type: 'month', w: 's2 k' }, { c: '종료', type: 'month', w: 's2 k' },
+    { c: '역할', type: 'select', opts: ['연구책임자', '공동연구책임자', '참여연구자'], w: 's2' },
+    { c: '총 연구비 (천원)', type: 'money', warn: true },
+    { c: '비고', hint: '선택 · 홈페이지에 표시되지 않음' }
+  ]
+};
+var DEFAULTS = {
+  news: function () { return { '날짜': today(), '홈페이지 표시': 'Y' }; },
+  members: function () { return { '상태': '재학', '과정': '석사과정', '홈페이지 표시': 'Y' }; },
+  papers: function () { return { '구분': '국제 저널', '연도': String(new Date().getFullYear()), '홈페이지 표시': 'Y' }; },
+  patents: function () { return { '구분': '국내', '상태': '출원', '국가': '대한민국', '홈페이지 표시': 'Y' }; },
+  projects: function () { return { '역할': '연구책임자', '홈페이지 표시': 'Y' }; }
+};
+
+/* ---------- 편집 창 ---------- */
+function drawEditor(k, cur) {
+  var ed = $('#ed');
+  if (!DRAFT || DRAFT.key !== k + ':' + (cur ? cur.ID : 'new')) {
+    var base = cur ? Object.assign({}, cur) : DEFAULTS[k]();
+    DRAFT = { key: k + ':' + (cur ? cur.ID : 'new'), row: base, uploads: [], previews: {},
+              authors: k === 'papers' ? parseAuthors(base['저자']) : null, confirm: false };
+    if (DRAFT.authors && !DRAFT.authors.length) DRAFT.authors = [{ name: '', first: false, corr: false }];
+  }
+  var d = DRAFT, r = d.row;
+  var html = '<h2>' + (cur ? esc(cur.ID) + ' 수정' : '새 ' + LABEL[k]) + '</h2>';
+  if (k === 'papers' && !cur) html += '<div class="doi"><b>DOI</b><input id="doi" placeholder="10.1109/TIM.2026.1234567"><button class="btn sm pri" id="doiGo">가져오기</button></div>';
+  html += '<div class="f">' + FIELDS[k].map(function (f) { return fieldHtml(k, f, r, d); }).join('') + '</div>';
+  html += '<label class="chk"><input type="checkbox" id="show"' + (r['홈페이지 표시'] === 'Y' ? ' checked' : '') + '> 홈페이지에 표시</label>';
+  if (d.confirm) {
+    html += '<div class="confirm"><span><b>' + esc(cur.ID) + '을(를) 삭제할까요?</b> 홈페이지와 실적원장에서 모두 사라집니다. 홈페이지에서만 숨기려면 \'홈페이지에 표시\'를 끄고 저장하세요.</span>' +
+      '<div class="r"><button class="btn sm" id="noDel">취소</button><button class="btn sm redf" id="yesDel">삭제</button></div></div>';
+  }
+  html += '<div class="acts"><div class="r">' +
+    (cur ? '<button class="btn del" id="del">삭제</button>' : '') +
+    (k === 'members' && cur && r['상태'] !== '졸업' ? '<button class="btn" id="grad">졸업 처리</button>' : '') +
+    '</div><button class="btn pri" id="save">저장</button></div>';
+  ed.innerHTML = html;
+  bindEditor(k, cur);
+}
+
+function fieldHtml(k, f, r, d) {
+  var v = r[f.c] || '', label = '<span>' + esc(f.label || f.c) + (f.hint ? ' <small>(' + esc(f.hint) + ')</small>' : '') + '</span>';
+  var w = f.w || '', cls = w + (f.warn && !v ? ' warn' : '');
+  var attrs = ' data-c="' + esc(f.c) + '" placeholder="' + esc(f.ph || '') + '"';
+  switch (f.type) {
+    case 'textarea': return '<label class="' + cls + '">' + label + '<textarea rows="2"' + attrs + '>' + esc(v) + '</textarea></label>';
+    case 'select': return '<label class="' + cls + '">' + label + '<select' + attrs + '>' +
+      (f.opts.indexOf(v) < 0 && v ? '<option selected>' + esc(v) + '</option>' : '') +
+      f.opts.map(function (o) { return '<option' + (o === v ? ' selected' : '') + ' value="' + esc(o) + '">' + (o || '—') + '</option>'; }).join('') + '</select></label>';
+    case 'date': return '<label class="' + cls + '">' + label + '<input type="date" value="' + esc(normDate(v)) + '"' + attrs + '></label>';
+    case 'month': return '<label class="' + cls + '">' + label + '<input type="month" value="' + esc(v) + '"' + attrs + '></label>';
+    case 'money':
+      return '<label class="' + cls + '">' + label + '<input inputmode="numeric" value="' + esc(fmtMoney(v)) + '"' + attrs + ' placeholder="예: 250,000">' +
+        '<small style="color:var(--amber)">전체 기간 합계를 한 번만 입력 · 홈페이지에는 표시되지 않습니다</small></label>';
+    case 'photos': return photosHtml(r, d);
+    case 'photo': return photoHtml(r, d);
+    case 'logo': return logoHtml(r);
+    case 'authors': return authorsHtml(d);
+    case 'jcr':
+      var has = r['IF(최신)'] || r['JCR 상위%(최신)'];
+      return '<div class="note" style="grid-column:span 6">🔒 <b>IF · JCR</b>은 직접 입력하지 않습니다. ' +
+        (has ? '현재 값: IF ' + esc(r['IF(최신)'] || '—') + ' · 상위 ' + esc(r['JCR 상위%(최신)'] || '—') + '%' +
+          (r['IF(출판연도)'] ? ' (출판연도 IF ' + esc(r['IF(출판연도)']) + ' · 상위 ' + esc(r['JCR 상위%(출판연도)']) + '%)' : '')
+          : (r['구분'] === '국제 저널' ? 'JCR 대기 · 학교 네트워크에서 자동으로 채워집니다. 같은 학술지가 원장에 있으면 저장할 때 최신 값이 먼저 들어갑니다.' : '학술대회·국내 논문은 해당 없음')) + '</div>';
+    default:
+      return '<label class="' + cls + '">' + label + '<input type="' + (f.type || 'text') + '" value="' + esc(v) + '"' + attrs + '></label>';
+  }
+}
+function normDate(s) { var m = String(s || '').match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/); return m ? m[1] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[3]).slice(-2) : ''; }
+function fmtMoney(v) { v = String(v || '').replace(/[^\d]/g, ''); return v ? (+v).toLocaleString('en-US') : ''; }
+
+function photosHtml(r, d) {
+  var list = split(r['사진']);
+  return '<div style="grid-column:span 6;display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:500">사진 ' + list.length + '장 <small style="font-weight:400;color:var(--sub)">· 첫 사진이 대표 사진입니다</small></span>' +
+    '<div class="photos">' + list.map(function (n, i) {
+      return '<div class="ph"><img src="' + esc(d.previews[n] || imgSrc(n, 'news')) + '" alt="">' + (i === 0 ? '<span class="c">대표</span>' : '') +
+        '<span class="x">' + (i ? '<button data-first="' + i + '" title="대표로">★</button>' : '') + '<button data-rm="' + i + '" title="빼기">✕</button></span></div>';
+    }).join('') + '</div>' +
+    '<label class="add">📷 사진 찍기 · 앨범에서 고르기 (여러 장 가능)<input type="file" id="files" accept="image/*" multiple hidden></label></div>';
+}
+function photoHtml(r, d) {
+  var n = r['사진'];
+  return '<div style="grid-column:span 6;display:flex;gap:14px;align-items:center">' +
+    (n ? '<img src="' + esc(d.previews[n] || imgSrc(n, 'people')) + '" style="width:84px;height:112px;object-fit:cover;border-radius:6px" alt="">' : '<div style="width:84px;height:112px;border-radius:6px;background:#D5DFE4"></div>') +
+    '<label class="add" style="padding:0 14px">사진 ' + (n ? '바꾸기' : '올리기') + ' (세로 3:4 권장)<input type="file" id="file1" accept="image/*" hidden></label></div>';
+}
+function logoHtml(r) {
+  var v = r['기관 마크'];
+  return '<div style="grid-column:span 6;display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:500">기관 로고</span><div class="logos">' +
+    LOGOS.map(function (k) { return '<button data-logo="' + esc(k) + '" class="' + (k === v ? 'on' : '') + '" title="' + esc(k) + '"><img src="' + SITE + 'assets/img/agency/' + esc(k) + '.png?v=' + rand() + '" alt="' + esc(k) + '"></button>'; }).join('') +
+    '<button data-logo="" class="' + (!v ? 'on' : '') + '" title="로고 없음" style="font-size:12px;color:var(--sub)">없음</button>' +
+    '<label class="add" style="width:48px;height:48px;min-height:0" title="새 로고 올리기">＋<input type="file" id="logoFile" accept="image/png,image/jpeg,image/svg+xml" hidden></label></div>' +
+    '<small style="color:var(--sub);font-size:12px">등록된 로고에서 고르거나 ＋로 새 기관 로고(배경이 투명한 PNG 권장)를 올리세요.</small></div>';
+}
+function authorsHtml(d) {
+  var meRole = role(buildAuthors(d.authors));
+  return '<div style="grid-column:span 6;display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500">저자 <small style="font-weight:400;color:var(--sub)">· 순서대로, 해당 칸만 체크</small></span><button class="btn sm" id="auAdd" type="button">＋ 저자</button></div>' +
+    '<div class="authors"><div class="au"><span>#</span><span>이름 (예: G.-Y. Kwon / 권구영)</span><span>공동1¹</span><span>교신*</span><span></span></div>' +
+    d.authors.map(function (a, i) {
+      return '<div class="au' + (isMe(a.name) ? ' me' : '') + '"><span>' + (i + 1) + '</span><input type="text" data-au="' + i + '" value="' + esc(a.name) + '">' +
+        '<input type="checkbox" data-auf="' + i + '"' + (a.first ? ' checked' : '') + '><input type="checkbox" data-auc="' + i + '"' + (a.corr ? ' checked' : '') + '>' +
+        '<span class="mv"><button data-up="' + i + '" title="위로">↑</button><button data-dn="' + i + '" title="아래로">↓</button><button data-aurm="' + i + '" title="빼기">✕</button></span></div>';
+    }).join('') + '</div>' +
+    '<div class="preview"><span style="color:var(--sub)">원장 표기</span>&nbsp; ' + esc(buildAuthors(d.authors)) + '<br><span style="color:var(--sub)">교수님 역할</span>&nbsp; <b style="color:var(--teal-d)">' + esc(meRole) + '</b> (자동)</div></div>';
+}
+
+function collect(k) {
+  var r = DRAFT.row;
+  $$('#ed [data-c]').forEach(function (el) {
+    var c = el.dataset.c, v = el.value;
+    if (el.type === 'month' || el.type === 'date') v = v || '';
+    if (c === '총 연구비 (천원)') v = v.replace(/[^\d]/g, '');
+    r[c] = v;
+  });
+  if (DRAFT.authors) {
+    $$('#ed [data-au]').forEach(function (el) { DRAFT.authors[+el.dataset.au].name = el.value; });
+    r['저자'] = buildAuthors(DRAFT.authors);
+  }
+  var s = $('#show'); if (s) r['홈페이지 표시'] = s.checked ? 'Y' : 'N';
+  return r;
+}
+function redraw(k, cur) { collect(k); drawEditor(k, cur); }
+
+function bindEditor(k, cur) {
+  var ed = $('#ed'), d = DRAFT;
+  $('#save', ed).onclick = function () { save(k, cur); };
+  if ($('#del', ed)) $('#del', ed).onclick = function () { collect(k); d.confirm = true; drawEditor(k, cur); $('#yesDel').scrollIntoView({ block: 'center' }); };
+  if ($('#noDel', ed)) $('#noDel', ed).onclick = function () { d.confirm = false; drawEditor(k, cur); };
+  if ($('#yesDel', ed)) $('#yesDel', ed).onclick = function () { remove(k, cur); };
+  if ($('#grad', ed)) $('#grad', ed).onclick = function () {
+    collect(k); d.row['상태'] = '졸업'; drawEditor(k, cur);
+    toast('상태를 "졸업"으로 바꿨습니다. 비고에 현재 소속을 적고 저장하세요.');
+    var b = $('[data-c="비고"]'); b.focus();
+  };
+  // 사진 여러 장
+  if ($('#files', ed)) $('#files', ed).onchange = function (e) {
+    collect(k);
+    var fs = [].slice.call(e.target.files), stamp = today().replace(/-/g, '') + '_' + rand();
+    Promise.all(fs.map(function (f, i) {
+      return shrink(f, 1600, 'image/jpeg').then(function (o) {
+        var name = 'n' + stamp + '_' + (i + 1) + '.jpg';
+        d.uploads.push({ path: 'assets/img/news/' + name, base64: o.base64 });
+        d.previews[name] = o.dataUrl;
+        return name;
+      });
+    })).then(function (names) {
+      d.row['사진'] = split(d.row['사진']).concat(names).join('; ');
+      drawEditor(k, cur);
+    }).catch(function (e) { toast(errMsg(e), true); });
+  };
+  $$('[data-rm]', ed).forEach(function (b) { b.onclick = function (e) {
+    e.preventDefault(); collect(k); var l = split(d.row['사진']); var n = l.splice(+b.dataset.rm, 1)[0];
+    d.uploads = d.uploads.filter(function (u) { return u.path.indexOf('/' + n) < 0; });
+    d.row['사진'] = l.join('; '); drawEditor(k, cur); }; });
+  $$('[data-first]', ed).forEach(function (b) { b.onclick = function (e) {
+    e.preventDefault(); collect(k); var l = split(d.row['사진']); var n = l.splice(+b.dataset.first, 1)[0];
+    d.row['사진'] = [n].concat(l).join('; '); drawEditor(k, cur); }; });
+  // 사진 한 장 (구성원)
+  if ($('#file1', ed)) $('#file1', ed).onchange = function (e) {
+    collect(k);
+    shrink(e.target.files[0], 900, 'image/jpeg').then(function (o) {
+      var name = 'p' + today().replace(/-/g, '') + '_' + rand() + '.jpg';
+      d.uploads = [{ path: 'assets/img/people/' + name, base64: o.base64 }];
+      d.previews[name] = o.dataUrl; d.row['사진'] = name; drawEditor(k, cur);
+    }).catch(function (e) { toast(errMsg(e), true); });
+  };
+  // 기관 로고
+  $$('[data-logo]', ed).forEach(function (b) { b.onclick = function (e) { e.preventDefault(); collect(k); d.row['기관 마크'] = b.dataset.logo; drawEditor(k, cur); }; });
+  if ($('#logoFile', ed)) $('#logoFile', ed).onchange = function (e) {
+    collect(k);
+    var f = e.target.files[0];
+    shrink(f, 300, 'image/png').then(function (o) { askLogoName(k, cur, o); });
+  };
+  // 저자 표
+  if (d.authors) {
+    $('#auAdd', ed).onclick = function () { collect(k); d.authors.push({ name: '', first: false, corr: false }); drawEditor(k, cur); $$('[data-au]').pop().focus(); };
+    $$('[data-auf]', ed).forEach(function (c) { c.onchange = function () { d.authors[+c.dataset.auf].first = c.checked; redraw(k, cur); }; });
+    $$('[data-auc]', ed).forEach(function (c) { c.onchange = function () { d.authors[+c.dataset.auc].corr = c.checked; redraw(k, cur); }; });
+    $$('[data-au]', ed).forEach(function (c) { c.onchange = function () { redraw(k, cur); }; });
+    $$('[data-up]', ed).forEach(function (b) { b.onclick = function (e) { e.preventDefault(); collect(k); var i = +b.dataset.up; if (i) { var t = d.authors[i]; d.authors[i] = d.authors[i - 1]; d.authors[i - 1] = t; } drawEditor(k, cur); }; });
+    $$('[data-dn]', ed).forEach(function (b) { b.onclick = function (e) { e.preventDefault(); collect(k); var i = +b.dataset.dn; if (i < d.authors.length - 1) { var t = d.authors[i]; d.authors[i] = d.authors[i + 1]; d.authors[i + 1] = t; } drawEditor(k, cur); }; });
+    $$('[data-aurm]', ed).forEach(function (b) { b.onclick = function (e) { e.preventDefault(); collect(k); d.authors.splice(+b.dataset.aurm, 1); if (!d.authors.length) d.authors.push({ name: '', first: false, corr: false }); drawEditor(k, cur); }; });
+  }
+  // 연구비 쉼표
+  var m = $('[data-c="총 연구비 (천원)"]', ed);
+  if (m) m.oninput = function () { var p = m.value.length - m.selectionStart; m.value = fmtMoney(m.value); var q = Math.max(0, m.value.length - p); m.setSelectionRange(q, q); };
+  // DOI
+  if ($('#doiGo', ed)) $('#doiGo', ed).onclick = function () {
+    var b = this; b.disabled = true; b.textContent = '찾는 중…';
+    call('apiCrossref', $('#doi').value).then(function (w) {
+      var key = w.doi.replace('https://doi.org/', '').toLowerCase();
+      var dup = rows('papers').filter(function (x) { return String(x.DOI).toLowerCase().indexOf(key) >= 0; })[0];
+      if (dup) { b.disabled = false; b.textContent = '가져오기'; return toast('이미 등록된 논문입니다 (' + dup.ID + '). 목록에서 찾아 수정하세요.', true); }
+      collect(k);
+      var r = d.row;
+      r['구분'] = w.kind; r['논문 제목'] = w.title; r['저널·학회명'] = w.journal; r['연도'] = w.year; r['월'] = w.month;
+      r['Vol.'] = w.volume; r['No.'] = w.issue; r['페이지/Art. No.'] = w.page; r['게재일'] = w.date; r['ISSN/ISBN'] = w.issn; r['DOI'] = w.doi;
+      if (w.kind === '국제 저널' && !r['등재 구분']) r['등재 구분'] = 'SCIE';
+      d.authors = w.authors.map(function (n) { return { name: n, first: false, corr: false }; });
+      drawEditor(k, cur);
+      toast('DOI에서 가져왔습니다. 공동1저자(¹)·교신(*)만 체크하세요.');
+    }).catch(function (e) { b.disabled = false; b.textContent = '가져오기'; toast(errMsg(e), true); });
+  };
+}
+
+function askLogoName(k, cur, o) {
+  var box = document.createElement('div');
+  box.className = 'note amber';
+  box.style.gridColumn = 'span 6';
+  box.innerHTML = '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><img src="' + o.dataUrl + '" style="max-height:40px" alt="">' +
+    '<span>로고 이름(영문 소문자, 예: keit)</span><input id="logoKey" style="height:36px;width:120px;padding:0 8px;border:1px solid var(--field);border-radius:6px">' +
+    '<button class="btn sm pri" id="logoUp">로고 올리기</button></div>';
+  $('#ed .f').appendChild(box);
+  $('#logoKey').focus();
+  $('#logoUp').onclick = function () {
+    var key = $('#logoKey').value.trim().toLowerCase(), b = this;
+    b.disabled = true; b.textContent = '올리는 중…';
+    call('apiUploadLogo', key, o.base64).then(function () {
+      if (LOGOS.indexOf(key) < 0) LOGOS.push(key);
+      DRAFT.row['기관 마크'] = key;
+      drawEditor(k, cur);
+      toast('로고를 올렸습니다. 과제를 저장하면 함께 반영됩니다.');
+    }).catch(function (e) { b.disabled = false; b.textContent = '로고 올리기'; toast(errMsg(e), true); });
+  };
+}
+
+function validate(k, r) {
+  var need = { news: ['날짜', '제목'], members: ['이름'], papers: ['구분', '연도', '논문 제목', '저자', '저널·학회명'], patents: ['발명의 명칭', '출원번호'], projects: ['과제명(국문)', '전문기관', '시작', '종료'] }[k];
+  var miss = need.filter(function (c) { return !String(r[c] || '').trim(); });
+  if (miss.length) throw new Error('다음 칸을 채워 주세요: ' + miss.join(', '));
+}
+
+function save(k, cur) {
+  var r = collect(k), b = $('#save');
+  try { validate(k, r); } catch (e) { return toast(errMsg(e), true); }
+  b.disabled = true; b.textContent = '저장 중…';
+  var row = Object.assign({}, r);
+  if (!cur) delete row.ID;
+  call('apiSave', k, row, DRAFT.uploads).then(function (res) {
+    DB[k] = res.data; SEL[k] = res.row.ID; DRAFT = null;
+    drawMenu(); draw();
+    toast('저장했습니다 (' + res.row.ID + '). 홈페이지에는 1~2분 뒤 보입니다.');
+  }).catch(function (e) { b.disabled = false; b.textContent = '저장'; toast(errMsg(e), true); });
+}
+
+function remove(k, cur) {
+  var b = $('#yesDel'); b.disabled = true; b.textContent = '삭제 중…';
+  call('apiDelete', k, cur.ID).then(function (res) {
+    DB[k] = res.data; SEL[k] = null; DRAFT = null; drawMenu(); draw();
+    toast(cur.ID + '를 삭제했습니다.');
+  }).catch(function (e) { b.disabled = false; b.textContent = '삭제'; toast(errMsg(e), true); });
+}
+
+/* ---------- 채워야 할 항목 ---------- */
+function drawTodo(v) {
+  var t = todos(), jp = jcrPending();
+  var noDate = rows('papers').filter(function (r) { return !r['게재일']; }).length;
+  var c = function (cls, label, n, unit, note) { return '<div class="card stat ' + cls + '"><span style="font-size:13px;color:var(--sub)">' + label + '</span><span class="n">' + n + '<small style="font-size:15px;font-weight:500"> ' + unit + '</small></span><span style="font-size:12px;color:var(--sub)">' + note + '</span></div>'; };
+  v.innerHTML = '<div><h1>채워야 할 항목</h1><p class="lead">실적원장에서 비어 있는 칸을 모았습니다. 채우면 목록에서 사라집니다.</p></div>' +
+    '<div class="cards">' +
+    c(t.some(function (x) { return x.k === 'projects'; }) ? 'a' : '', '과제 총 연구비', t.filter(function (x) { return x.k === 'projects'; }).length, '건', '과제마다 한 번만 입력') +
+    c(t.some(function (x) { return x.k === 'patents'; }) ? 'a' : '', '특허 출원인', t.filter(function (x) { return x.k === 'patents'; }).length, '건', '출원·등록 특허의 권리자') +
+    c('', 'JCR 대기', jp.length, '편', '자동으로 채워짐') +
+    c('', '게재일', noDate, '편', '선택 · 비워 둬도 됨') + '</div>' +
+    '<section class="card list">' + (t.length ? t.map(function (x) {
+      return '<div class="row" data-k="' + x.k + '" data-id="' + esc(x.id) + '" data-f="' + esc(x.f) + '"><span class="tag g" style="min-width:56px;text-align:center">' + esc(x.id) + '</span>' +
+        '<div class="main"><span class="t">' + esc(x.t) + '</span><span class="s">' + LABEL[x.k] + '</span></div><span class="tag a">' + esc(x.label) + '</span><button class="btn sm">채우기</button></div>';
+    }).join('') : '<div class="empty">비어 있는 칸이 없습니다 🎉</div>') + '</section>' +
+    '<div class="note">JCR 대기 논문은 직접 입력하지 않아도 됩니다. 학교 네트워크에서 자동으로 채워지고, 매년 JCR 발표 뒤 출판연도 값도 갱신됩니다. 게재일은 학술지가 날짜를 공개하지 않은 경우가 많아 비워 둬도 됩니다.</div>';
+  $$('.row', v).forEach(function (el) { el.onclick = function () { go(el.dataset.k, el.dataset.id, el.dataset.f); }; });
+}
+
+/* ---------- 로컬 미리보기용 가짜 서버 (Apps Script 밖에서만) ---------- */
+var MOCK = {
+  apiLoad: function () {
+    var ks = ['papers', 'patents', 'projects', 'news', 'members'], data = {};
+    return Promise.all(ks.map(function (k) {
+      return fetch('../data/' + k + '.csv').then(function (r) { return r.text(); }).then(function (t) { data[k] = csv(t); });
+    })).then(function () { return { data: data, logos: ['ketep', 'knu', 'kdi', 'kepco', 'nrf', 'etri', 'dongguk'] }; });
+  },
+  apiSave: function (k, row) {
+    var t = DB[k], i = -1;
+    t.rows.forEach(function (r, j) { if (row.ID && r.ID === row.ID) i = j; });
+    if (i < 0) {
+      var pre = k === 'papers' ? { '국제 저널': 'IJ', '국제 학술대회': 'IC', '국내 저널': 'DJ', '국내 학술대회': 'DC' }[row['구분']] : { patents: 'PT', projects: 'PR', news: 'NW', members: 'MB' }[k];
+      var max = 0; t.rows.forEach(function (r) { var m = r.ID.match(/^([A-Z]+)-(\d+)$/); if (m && m[1] === pre) max = Math.max(max, +m[2]); });
+      row.ID = pre + '-' + ('00' + (max + 1)).slice(-3); t.rows.unshift(row);
+    } else t.rows[i] = Object.assign({}, t.rows[i], row);
+    return new Promise(function (res) { setTimeout(function () { res({ row: row, data: t }); }, 400); });
+  },
+  apiDelete: function (k, id) { DB[k].rows = DB[k].rows.filter(function (r) { return r.ID !== id; }); return Promise.resolve({ data: DB[k] }); },
+  apiUploadLogo: function (key) { return /^[a-z0-9-]{2,20}$/.test(key) ? Promise.resolve(key) : Promise.reject(new Error('로고 이름은 영문 소문자·숫자로 적어 주세요 (예: keit).')); },
+  apiCrossref: function (doi) {
+    doi = String(doi).trim().replace(/^https?:\/\/(dx\.)?doi\.org\//i, '');
+    return fetch('https://api.crossref.org/works/' + encodeURIComponent(doi)).then(function (r) { if (!r.ok) throw new Error('DOI를 찾지 못했습니다.'); return r.json(); }).then(function (j) {
+      var w = j.message, iss = (w.issued['date-parts'] || [[]])[0], date = '';
+      ['published-online', 'published-print', 'issued'].some(function (k) { var dp = ((w[k] || {})['date-parts'] || [[]])[0]; if (dp.length === 3) { date = dp[0] + '-' + ('0' + dp[1]).slice(-2) + '-' + ('0' + dp[2]).slice(-2); return true; } });
+      var ini = function (g) { return g ? g.split(/\s+/).map(function (w) { return w.split('-').map(function (p) { return p[0].toUpperCase() + '.'; }).join('-'); }).join(' ') + ' ' : ''; };
+      return { kind: w.type === 'proceedings-article' ? '국제 학술대회' : '국제 저널', title: w.title[0], journal: (w['container-title'] || [''])[0], year: String(iss[0] || ''), month: String(iss[1] || ''),
+        volume: w.volume || '', issue: w.issue || '', page: w['article-number'] ? 'Art. ' + w['article-number'] : (w.page ? (/-/.test(w.page) ? 'pp. ' + w.page.replace('-', '–') : 'Art. ' + w.page) : ''), date: date,
+        issn: (w.ISSN || [''])[0], doi: 'https://doi.org/' + w.DOI, authors: (w.author || []).map(function (a) { return ini(a.given) + (a.family || a.name || ''); }) };
+    });
+  }
+};
+function csv(text) {
+  var rows = [], row = [], f = '', q = false;
+  for (var i = 0; i < text.length; i++) {
+    var c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true; else if (c === ',') { row.push(f); f = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(f); rows.push(row); row = []; f = ''; }
+    else f += c;
+  }
+  if (f || row.length) { row.push(f); rows.push(row); }
+  var head = rows.shift();
+  return { head: head, rows: rows.filter(function (r) { return r.some(String); }).map(function (r) { var o = {}; head.forEach(function (h, i) { o[h] = r[i] || ''; }); return o; }) };
+}
+/* ---------- 시작 ---------- */
+$('#me').textContent = ME;
+if (!LIVE) document.body.insertAdjacentHTML('afterbegin', '<div style="background:#F2B544;color:#1D2760;text-align:center;padding:6px;font-size:13px;font-weight:700">미리보기 모드 · 여기서 고친 내용은 저장되지 않습니다</div>');
+call('apiLoad').then(function (res) {
+  DB = res.data; LOGOS = res.logos;
+  drawMenu(); draw();
+}).catch(function (e) {
+  $('#view').innerHTML = '<div class="loading">불러오지 못했습니다: ' + esc(errMsg(e)) + '</div>';
+});
+</script>
+</body>
+</html>
