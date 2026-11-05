@@ -27,7 +27,7 @@ var ID_PREFIX = { patents: 'PT', projects: 'PR', news: 'NW', members: 'MB' };
 // 실적원장에는 넣지 않는 열(홈페이지 전용)
 var LEDGER_SKIP = ['홈페이지 표시', '기관 마크'];
 // 원장 모양을 바꾸면 이 값을 올립니다(데이터가 그대로여도 다시 만듦)
-var LEDGER_FORMAT = '3';
+var LEDGER_FORMAT = '4';
 
 /* ---------------- 웹 앱 ---------------- */
 
@@ -58,6 +58,11 @@ function doGet() {
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
+/** 편집기·시간 트리거로 실행할 때만 허용(관리자 계정). */
+function ownerOnly_() {
+  var e = me_();
+  if (e && !isAdmin_(e)) throw new Error('관리자만 실행할 수 있습니다.');
+}
 function me_() { return String(Session.getActiveUser().getEmail() || '').toLowerCase(); }
 function admins_() {
   return String(PropertiesService.getScriptProperties().getProperty('ADMINS') || '')
@@ -69,6 +74,8 @@ function guard_() {
   if (!isAdmin_(e)) throw new Error('관리자로 등록되지 않은 계정입니다.');
   return e;
 }
+/** 커밋 메시지용: kgy765@gmail.com → kgy***@gmail.com */
+function who_(email) { return String(email).replace(/^(.{1,3})[^@]*(@.*)$/, '$1***$2'); }
 function esc_(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
 /* ---------------- 화면에서 부르는 함수 ---------------- */
@@ -104,7 +111,12 @@ function apiSave(dataset, row, uploads) {
   var email = guard_();
   var spec = DATASETS[dataset];
   if (!spec) throw new Error('알 수 없는 항목: ' + dataset);
-  (uploads || []).forEach(function (u) { checkUploadPath_(u.path); });
+  uploads = uploads || [];
+  if (uploads.length > 20) throw new Error('사진은 한 번에 20장까지 올릴 수 있습니다.');
+  uploads.forEach(function (u) {
+    checkUploadPath_(u.path);
+    if (String(u.base64 || '').length > 8 * 1024 * 1024) throw new Error('사진 한 장이 너무 큽니다.');
+  });
   var saved, table;
   commitWithRetry_(function (head) {
     var t = table = readCsv_(spec.file, head);
@@ -113,6 +125,9 @@ function apiSave(dataset, row, uploads) {
     var cur = idx >= 0 ? rows[idx] : {};
     var next = {};
     cols.forEach(function (c) { next[c] = c in row ? clean_(row[c]) : (cur[c] || ''); });
+    ['DOI', '링크'].forEach(function (c) {
+      if (next[c] && !/^https?:\/\//i.test(next[c]) && !/^10\.\d{4,}\//.test(next[c])) throw new Error(c + ' 칸에는 https://로 시작하는 주소만 넣을 수 있습니다.');
+    });
     if (dataset === 'papers') {
       JCR_COLS.forEach(function (c) { next[c] = cur[c] || ''; });   // JCR은 손대지 않음
       var moved = idx >= 0 && String(cur['저널·학회명']).toLowerCase() !== String(next['저널·학회명']).toLowerCase();
@@ -139,7 +154,7 @@ function apiSave(dataset, row, uploads) {
     saved = next;
     var files = [{ path: spec.file, text: toCsv_(cols, rows) }];
     (uploads || []).forEach(function (u) { files.push({ path: u.path, base64: u.base64 }); });
-    return { files: files, message: '관리자: ' + label_(dataset) + ' ' + (idx < 0 ? '추가' : '수정') + ' ' + next.ID + ' (' + email + ')' };
+    return { files: files, message: '관리자: ' + label_(dataset) + ' ' + (idx < 0 ? '추가' : '수정') + ' ' + next.ID + ' (' + who_(email) + ')' };
   });
   return { row: saved, data: table };
 }
@@ -154,7 +169,7 @@ function apiDelete(dataset, id) {
     if (i < 0) throw new Error(id + '를 찾을 수 없습니다. 이미 삭제되었을 수 있습니다.');
     t.rows.splice(i, 1);
     return { files: [{ path: spec.file, text: toCsv_(t.head, t.rows) }],
-             message: '관리자: ' + label_(dataset) + ' 삭제 ' + id + ' (' + email + ')' };
+             message: '관리자: ' + label_(dataset) + ' 삭제 ' + id + ' (' + who_(email) + ')' };
   });
   return { data: table };
 }
@@ -165,7 +180,7 @@ function apiUploadLogo(key, base64) {
   if (!/^[a-z0-9-]{2,20}$/.test(key)) throw new Error('로고 이름은 영문 소문자·숫자로 적어 주세요 (예: keit).');
   commitWithRetry_(function () {
     return { files: [{ path: 'assets/img/agency/' + key + '.png', base64: base64 }],
-             message: '관리자: 기관 로고 ' + key + ' (' + email + ')' };
+             message: '관리자: 기관 로고 ' + key + ' (' + who_(email) + ')' };
   });
   return key;
 }
@@ -387,6 +402,7 @@ function toCsv_(head, rows) {
  * 처음 한 번은 원장 사본(백업)을 드라이브에 만들어 둡니다.
  */
 function syncLedger() {
+  ownerOnly_();
   var props = PropertiesService.getScriptProperties();
   if (props.getProperty('PRIVATE_IMPORTED') !== 'Y') throw new Error('먼저 importLedgerPrivate()를 한 번 실행하세요.');
   var last = (gh_('get', '/commits?path=data&per_page=1&sha=' + BRANCH) || [{}])[0].sha;
@@ -440,7 +456,7 @@ function writeTab_(ss, name, cols, rows) {
   if (sh.getMaxColumns() < cols.length) sh.insertColumnsAfter(sh.getMaxColumns(), cols.length - sh.getMaxColumns());
   var need = rows.length + 1;
   if (sh.getMaxRows() > need + 20) sh.deleteRows(need + 21, sh.getMaxRows() - need - 20);
-  var values = [cols].concat(rows.map(function (r) { return cols.map(function (c) { return r[c] == null ? '' : r[c]; }); }));
+  var values = [cols].concat(rows.map(function (r) { return cols.map(function (c) { var v = r[c] == null ? '' : String(r[c]); return /^[=+@]/.test(v) ? "'" + v : v; }); }));
   sh.getRange(1, 1, values.length, cols.length).setNumberFormat('@').setValues(values)
     .setVerticalAlignment('top').setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP).setFontSize(10);
   cols.forEach(function (c, i) {
@@ -504,9 +520,11 @@ function tidyLedger_(ss, data, now) {
     row('국제 학술대회', kind('국제 학술대회'), P),
     row('국내 저널', kind('국내 저널'), P),
     row('국내 학술대회', kind('국내 학술대회'), P),
-    ['특허 등록 (국내 / 국외)', cnt(T, function (r) { return r['상태'] === '등록' && r['구분'] === '국내'; }) + ' / ' + cnt(T, function (r) { return r['상태'] === '등록' && r['구분'] !== '국내'; }), ''],
+    ['특허 등록 (국내)', cnt(T, function (r) { return r['상태'] === '등록' && r['구분'] === '국내'; }), ''],
+    ['특허 등록 (국외)', cnt(T, function (r) { return r['상태'] === '등록' && r['구분'] !== '국내'; }), ''],
     ['특허 출원', cnt(T, function (r) { return r['상태'] !== '등록'; }), ''],
-    ['과제 (연구책임 / 전체)', pi.length + ' / ' + R.length, ''],
+    ['과제 전체', R.length, ''],
+    ['  └ 연구책임', pi.length, ''],
     ['진행 중 과제', cnt(R, function (r) { return r['종료'] >= now; }), ''],
     ['연구책임 과제 총 연구비 (천원)', sum(pi), ''],
     ['', '', ''],
@@ -518,11 +536,11 @@ function tidyLedger_(ss, data, now) {
   g.getRange(1, 1).setFontSize(16).setFontWeight('bold').setFontColor('#1D2760');
   g.getRange(2, 1, 1, 3).merge().setWrap(true).setFontColor('#3F4450');
   g.getRange(4, 1, 1, 3).setFontWeight('bold').setBackground('#1D2760').setFontColor('#FFFFFF');
-  g.getRange(5, 2, 11, 2).setHorizontalAlignment('right');
-  g.getRange(15, 2).setNumberFormat('#,##0');
-  g.getRange(17, 2, 1, 2).merge().setWrap(true);
-  g.getRange(18, 2, 1, 2).merge().setWrap(true);
-  g.getRange(17, 1, 3, 1).setFontWeight('bold');
+  g.getRange(5, 2, 13, 2).setHorizontalAlignment('right');
+  g.getRange(17, 2).setNumberFormat('#,##0');
+  g.getRange(19, 2, 1, 2).merge().setWrap(true);
+  g.getRange(20, 2, 1, 2).merge().setWrap(true);
+  g.getRange(19, 1, 3, 1).setFontWeight('bold');
   g.setColumnWidth(1, 220).setColumnWidth(2, 260).setColumnWidth(3, 260);
   g.setRowHeight(2, 36);
   lock_(g);
@@ -549,6 +567,7 @@ function lock_(sh) {
  * 과제의 총 연구비·비고, 특허의 출원인. 저장소 값이 비어 있을 때만 채웁니다.
  */
 function importLedgerPrivate() {
+  ownerOnly_();
   var ss = SpreadsheetApp.openById(LEDGER_ID);
   var report = [];
   commitWithRetry_(function (head) {
@@ -584,6 +603,7 @@ function importLedgerPrivate() {
 
 /** 매시간 원장 갱신 트리거 설치 (교수님이 편집기에서 한 번 실행) */
 function installTrigger() {
+  ownerOnly_();
   ScriptApp.getProjectTriggers().forEach(function (t) {
     if (t.getHandlerFunction() === 'syncLedger') ScriptApp.deleteTrigger(t);
   });

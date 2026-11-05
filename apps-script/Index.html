@@ -461,7 +461,7 @@ function fieldHtml(k, f, r, d) {
     case 'authors': return authorsHtml(d);
     case 'jcr':
       if (r['구분'] !== '국제 저널') return '';
-      var jv = r['JCR 상위%(최신)'] ? 'IF ' + (r['IF(최신)'] || '—') + ' · 상위 ' + r['JCR 상위%(최신)'] + '%' : 'JCR 대기';
+      var jv = r['JCR 상위%(최신)'] ? 'IF ' + (r['IF(최신)'] || '—') + ' · 상위 ' + r['JCR 상위%(최신)'] + '%' : (r['등재 구분'] === 'SCIE' ? 'JCR 대기' : '해당 없음');
       return '<label class="ro"><span>IF · JCR 상위%</span><input value="' + esc(jv) + '" disabled></label>';
     default:
       return '<label class="' + cls + '">' + label + '<input type="' + (f.type || 'text') + '" value="' + esc(v) + '"' + attrs + '></label>';
@@ -722,6 +722,10 @@ function csv(text) {
   return { head: head, rows: rows.filter(function (r) { return r.some(String); }).map(function (r) { var o = {}; head.forEach(function (h, i) { o[h] = r[i] || ''; }); return o; }) };
 }
 /* ---------- 시작 ---------- */
+// 다른 사이트가 이 페이지를 몰래 품어(iframe) 클릭을 유도하지 못하게, 허용한 곳 안에서만 동작
+var FRAME_OK = [/^https:\/\/script\.google\.com$/, /\.googleusercontent\.com$/, /^https:\/\/eil-knu\.github\.io$/, /^http:\/\/localhost(:\d+)?$/];
+var bad = [].slice.call(location.ancestorOrigins || []).filter(function (o) { return !FRAME_OK.some(function (re) { return re.test(o); }); });
+if (bad.length) { document.body.innerHTML = '<p style="padding:40px;font-family:sans-serif">허용되지 않은 곳에서 열렸습니다. eil-knu.github.io/admin.html 에서 여세요.</p>'; throw new Error('blocked frame'); }
 $('#me').textContent = ME;
 if (!LIVE) document.body.insertAdjacentHTML('afterbegin', '<div style="background:#F2B544;color:#1D2760;text-align:center;padding:6px;font-size:13px;font-weight:700">미리보기 모드 · 여기서 고친 내용은 저장되지 않습니다</div>');
 var BOOT = null;
