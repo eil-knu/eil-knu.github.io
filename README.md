@@ -5,7 +5,7 @@ GitHub Pages로 공개되며(https://eil-knu.github.io/), 논문·특허·과제
 
 ## 내용 고치는 법
 
-**학생들은 관리자 페이지만 쓰면 됩니다.** 구글 계정으로 로그인해 소식·구성원·논문·특허·과제를 올리고, 고치고, 지웁니다.
+**학생들은 [관리자 페이지](https://script.google.com/macros/s/AKfycbyoMLqbDYz_oT131k6zgm1seYkNvoy2-viidlSvNokEQOlJDMcqoEf2CvJerCFEu_Mf5Q/exec)만 쓰면 됩니다** (홈페이지 맨 아래 '관리자' 링크). 구글 계정으로 로그인해 소식·구성원·논문·특허·과제를 올리고, 고치고, 지웁니다.
 저장하면 이 저장소에 바로 커밋되고, 홈페이지에는 1~2분 뒤 반영됩니다. 사진도 관리자 페이지에서 올리면 자동으로 줄여서 저장합니다.
 
 | 바꾸고 싶은 것 | 하는 곳 |
@@ -37,6 +37,12 @@ GitHub Pages로 공개되며(https://eil-knu.github.io/), 논문·특허·과제
 사진 칸에 파일 이름을 적으면 `assets/img/news/`(구성원은 `people/`)의 사진을 씁니다. 전체 주소나 구글 드라이브 공유 링크도 됩니다.
 
 ## 관리자 페이지 (`apps-script/`)
+
+주소: https://script.google.com/macros/s/AKfycbyoMLqbDYz_oT131k6zgm1seYkNvoy2-viidlSvNokEQOlJDMcqoEf2CvJerCFEu_Mf5Q/exec
+
+처음 들어가면 "Google에서 확인하지 않은 앱" 경고가 나옵니다. **고급 → EIL 관리자(으)로 이동 → 허용**을 누르면 됩니다(연구실이 직접 만든 앱이라 나오는 경고). "접근 권한이 없습니다"가 나오면 화면에 보이는 이메일을 교수님께 알려 `ADMINS`에 추가합니다.
+
+코드를 고치면 Apps Script 편집기에 다시 붙여 넣고 **배포 → 배포 관리 → 수정(연필) → 버전: 새 버전 → 배포**를 해야 반영됩니다(주소는 그대로).
 
 Google Apps Script 웹 앱입니다. `Code.gs`(서버)와 `Index.html`(화면) 두 파일을 Apps Script 프로젝트에 붙여 넣어 배포합니다.
 

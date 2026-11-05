@@ -15,7 +15,7 @@ NAV = [
     ("research", "Research"), ("publications", "Publications"), ("news", "Lab News"), ("contact", "Contact"),
 ]
 SITE = "에너지정보처리연구실 | Energy Informatics Laboratory"
-VERSION = "20261105a"
+VERSION = "20261105b"
 # 공개 주소가 정해지면 적어 주세요 (예: "https://eil-knu.github.io"). 공유 미리보기 이미지에 쓰입니다.
 SITE_URL = "https://eil-knu.github.io"
 
@@ -71,7 +71,7 @@ FOOT = """</main>
 <nav class="links" aria-label="바닥글 메뉴">
 {links}
 </nav>
-<p class="copy">© 2026 Energy Informatics Laboratory, Kongju National University. All Rights Reserved.</p>
+<p class="copy">© 2026 Energy Informatics Laboratory, Kongju National University. All Rights Reserved. <a class="admin" href="https://script.google.com/macros/s/AKfycbyoMLqbDYz_oT131k6zgm1seYkNvoy2-viidlSvNokEQOlJDMcqoEf2CvJerCFEu_Mf5Q/exec" rel="nofollow">관리자</a></p>
 </div>
 </footer>
 </body>
