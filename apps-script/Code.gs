@@ -40,15 +40,18 @@ function doGet() {
       '<p>' + (email ? esc_(email) + ' 계정은 관리자로 등록되어 있지 않습니다.' : '구글 계정 정보를 확인할 수 없습니다.') +
       '<br>교수님께 이메일 등록을 요청하세요.</p></div>').setTitle('EIL 관리자');
   }
-  // 화면(Index.html)은 GitHub 저장소에서 바로 읽습니다. 그래서 화면만 고칠 때는 다시 배포할 필요가 없습니다.
-  // GitHub을 못 읽으면 이 프로젝트에 들어 있는 Index 파일을 씁니다.
-  var t;
+  // 화면(Index.html)과 데이터를 GitHub에서 한꺼번에 읽어 페이지에 넣습니다.
+  // 화면만 고칠 때는 다시 배포할 필요가 없습니다. GitHub을 못 읽으면 이 프로젝트의 Index 파일을 씁니다.
+  var t, boot = null;
   try {
-    var j = gh_('get', '/contents/apps-script/Index.html?ref=' + BRANCH);
-    t = HtmlService.createTemplate(Utilities.newBlob(Utilities.base64Decode(j.content.replace(/\s/g, ''))).getDataAsString('UTF-8'));
+    var all = loadAll_(true);
+    t = HtmlService.createTemplate(all.index);
+    delete all.index;
+    boot = all;
   } catch (e) {
     t = HtmlService.createTemplateFromFile('Index');
   }
+  t.boot = boot ? JSON.stringify(boot).replace(/</g, '\\u003c') : '';
   t.email = email;
   return t.evaluate().setTitle('EIL 관리자')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
@@ -72,14 +75,24 @@ function esc_(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '
 /** 모든 데이터와 등록된 기관 로고 목록을 돌려줍니다. */
 function apiLoad() {
   guard_();
-  var head = ref_();
-  var out = { data: {}, logos: [], commit: head };
-  Object.keys(DATASETS).forEach(function (k) { out.data[k] = readCsv_(DATASETS[k].file, head); });
-  var dir = gh_('get', '/contents/assets/img/agency?ref=' + head) || [];
-  out.logos = dir.filter(function (f) { return /\.png$/i.test(f.name); })
+  return loadAll_(false);
+}
+
+function loadAll_(withIndex) {
+  var keys = Object.keys(DATASETS);
+  var paths = keys.map(function (k) { return '/contents/' + DATASETS[k].file + '?ref=' + BRANCH; })
+    .concat(['/contents/assets/img/agency?ref=' + BRANCH]);
+  if (withIndex) paths.push('/contents/apps-script/Index.html?ref=' + BRANCH);
+  var res = ghAll_(paths);   // 병렬
+  var out = { data: {}, logos: [] };
+  keys.forEach(function (k, i) { out.data[k] = csvFromContents_(res[i]); });
+  out.logos = (res[keys.length] || []).filter(function (f) { return /\.png$/i.test(f.name); })
     .map(function (f) { return f.name.replace(/\.png$/i, ''); });
+  if (withIndex) out.index = decode_(res[keys.length + 1].content);
   return out;
 }
+
+function decode_(b64) { return Utilities.newBlob(Utilities.base64Decode(String(b64).replace(/\s/g, ''))).getDataAsString('UTF-8'); }
 
 /**
  * 한 줄 저장(추가 또는 수정).
@@ -91,9 +104,9 @@ function apiSave(dataset, row, uploads) {
   var spec = DATASETS[dataset];
   if (!spec) throw new Error('알 수 없는 항목: ' + dataset);
   (uploads || []).forEach(function (u) { checkUploadPath_(u.path); });
-  var saved;
+  var saved, table;
   commitWithRetry_(function (head) {
-    var t = readCsv_(spec.file, head);
+    var t = table = readCsv_(spec.file, head);
     var rows = t.rows, cols = t.head;
     var idx = row.ID ? findIndex_(rows, row.ID) : -1;
     var cur = idx >= 0 ? rows[idx] : {};
@@ -125,22 +138,22 @@ function apiSave(dataset, row, uploads) {
     (uploads || []).forEach(function (u) { files.push({ path: u.path, base64: u.base64 }); });
     return { files: files, message: '관리자: ' + label_(dataset) + ' ' + (idx < 0 ? '추가' : '수정') + ' ' + next.ID + ' (' + email + ')' };
   });
-  return { row: saved, data: readCsv_(spec.file, ref_()) };
+  return { row: saved, data: table };
 }
 
 /** 한 줄 삭제. */
 function apiDelete(dataset, id) {
   var email = guard_();
-  var spec = DATASETS[dataset];
+  var spec = DATASETS[dataset], table;
   commitWithRetry_(function (head) {
-    var t = readCsv_(spec.file, head);
+    var t = table = readCsv_(spec.file, head);
     var i = findIndex_(t.rows, id);
     if (i < 0) throw new Error(id + '를 찾을 수 없습니다. 이미 삭제되었을 수 있습니다.');
     t.rows.splice(i, 1);
     return { files: [{ path: spec.file, text: toCsv_(t.head, t.rows) }],
              message: '관리자: ' + label_(dataset) + ' 삭제 ' + id + ' (' + email + ')' };
   });
-  return { data: readCsv_(spec.file, ref_()) };
+  return { data: table };
 }
 
 /** 기관 로고만 올리기. key: 영문 소문자 (예: keit) */
@@ -209,12 +222,30 @@ function gh_(method, path, body) {
   return text ? JSON.parse(text) : null;
 }
 
+/** 여러 GET 요청을 병렬로 보냅니다. 없는 파일(404)은 null. */
+function ghAll_(paths) {
+  var hd = { Authorization: 'Bearer ' + token_(), Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+  return UrlFetchApp.fetchAll(paths.map(function (p) {
+    return { url: 'https://api.github.com/repos/' + REPO + p, headers: hd, muteHttpExceptions: true };
+  })).map(function (r, i) {
+    var code = r.getResponseCode();
+    if (code === 404) return null;
+    if (code >= 300) throw new Error('GitHub 오류 ' + code + ' (' + paths[i] + ')');
+    return JSON.parse(r.getContentText());
+  });
+}
+
 function ref_() { return gh_('get', '/git/ref/heads/' + BRANCH).object.sha; }
 
 function readCsv_(file, ref) {
   var j = gh_('get', '/contents/' + file + '?ref=' + ref);
   if (!j) throw new Error(file + ' 파일이 없습니다.');
-  var text = Utilities.newBlob(Utilities.base64Decode(j.content.replace(/\s/g, ''))).getDataAsString('UTF-8');
+  return csvFromContents_(j);
+}
+
+function csvFromContents_(j) {
+  if (!j) throw new Error('데이터 파일이 없습니다.');
+  var text = decode_(j.content);
   var rows = parseCsv_(text.replace(/^﻿/, ''));
   var head = rows.shift() || [];
   return { head: head, rows: rows.filter(function (r) { return r.some(String); }).map(function (r) {
@@ -231,11 +262,20 @@ function commitWithRetry_(build) {
     var head = ref_();
     var plan = build(head);
     var base = gh_('get', '/git/commits/' + head).tree.sha;
+    // 사진은 병렬로 올리고, CSV 같은 글자 파일은 트리에 바로 넣습니다.
+    var imgs = plan.files.filter(function (f) { return f.base64 != null; });
+    var hd = { Authorization: 'Bearer ' + token_(), Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+    var shas = UrlFetchApp.fetchAll(imgs.map(function (f) {
+      return { url: 'https://api.github.com/repos/' + REPO + '/git/blobs', method: 'post', contentType: 'application/json',
+               headers: hd, muteHttpExceptions: true, payload: JSON.stringify({ content: f.base64, encoding: 'base64' }) };
+    })).map(function (r) {
+      if (r.getResponseCode() >= 300) throw new Error('사진을 올리지 못했습니다: ' + r.getContentText().slice(0, 120));
+      return JSON.parse(r.getContentText()).sha;
+    });
     var tree = plan.files.map(function (f) {
-      var blob = gh_('post', '/git/blobs', f.base64 != null
-        ? { content: f.base64, encoding: 'base64' }
-        : { content: Utilities.base64Encode(f.text, Utilities.Charset.UTF_8), encoding: 'base64' });
-      return { path: f.path, mode: '100644', type: 'blob', sha: blob.sha };
+      return f.base64 != null
+        ? { path: f.path, mode: '100644', type: 'blob', sha: shas[imgs.indexOf(f)] }
+        : { path: f.path, mode: '100644', type: 'blob', content: f.text };
     });
     var t = gh_('post', '/git/trees', { base_tree: base, tree: tree });
     var c = gh_('post', '/git/commits', { message: plan.message, tree: t.sha, parents: [head] });

@@ -66,6 +66,7 @@ h1{margin:0;font-size:26px;color:var(--navy)}
 .f input,.f select,.f textarea{height:42px;padding:0 10px;border:1px solid var(--field);border-radius:8px;background:#fff;width:100%}
 .f textarea{height:auto;padding:10px;resize:vertical;line-height:1.5}
 .f .warn input{border-color:#E6C27A;background:var(--amber-bg)}
+.f .ro input{background:var(--bg);color:var(--sub);border-style:dashed}
 .f .auto input,.f .auto select{border-color:#9ED3C9;background:#F3FAF8}
 .chk{display:flex;align-items:center;gap:8px;font-size:14px}
 .chk input{width:18px;height:18px;accent-color:var(--teal)}
@@ -98,7 +99,7 @@ h1{margin:0;font-size:26px;color:var(--navy)}
 .logos button{all:unset;cursor:pointer;width:48px;height:48px;border:1px solid var(--field);border-radius:8px;display:flex;align-items:center;justify-content:center;background:#fff}
 .logos button.on{border:2px solid var(--teal)}
 .logos img{max-width:34px;max-height:34px}
-.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .stat{padding:18px 20px;display:flex;flex-direction:column;gap:4px}
 .stat .n{font-size:30px;font-weight:700}
 .stat.a{border-color:var(--amber-line)}.stat.a .n{color:#8A5A00}
@@ -138,6 +139,7 @@ h1{margin:0;font-size:26px;color:var(--navy)}
   </nav>
   <main id="view"><div class="loading">불러오는 중…</div></main>
 </div>
+<script id="boot" type="application/json"><?!= boot ?></script>
 <script>
 var ME = '<?= email ?>';
 if (ME.charAt(0) === '<') ME = 'dev@local';
@@ -310,11 +312,12 @@ function drawRows(k) {
 
 function lead(k) {
   var r = rows(k);
-  if (k === 'news') return '올린 소식 ' + r.length + '건. 최신 날짜가 홈페이지 맨 위에 나옵니다.';
-  if (k === 'members') return '재학 ' + r.filter(function (x) { return x['상태'] !== '졸업'; }).length + '명 · 졸업 ' + r.filter(function (x) { return x['상태'] === '졸업'; }).length + '명. 졸업 처리하면 Members 페이지의 Alumni로 옮겨집니다.';
-  if (k === 'papers') return KINDS.map(function (c) { return c + ' ' + r.filter(function (x) { return x['구분'] === c; }).length; }).join(' · ') + '편. IF·JCR은 교수님이 따로 갱신합니다.';
-  if (k === 'patents') return '등록 ' + r.filter(function (x) { return x['상태'] === '등록'; }).length + '건 · 출원 ' + r.filter(function (x) { return x['상태'] !== '등록'; }).length + '건. 출원 특허가 등록되면 등록번호와 등록일만 추가하세요.';
-  return '총 ' + r.length + '건. 총 연구비는 실적원장에만 들어가고 홈페이지에는 보이지 않습니다.';
+  if (k === 'news') return r.length + '건';
+  if (k === 'members') return '재학 ' + r.filter(function (x) { return x['상태'] !== '졸업'; }).length + '명 · 졸업 ' + r.filter(function (x) { return x['상태'] === '졸업'; }).length + '명';
+  if (k === 'papers') return KINDS.map(function (c) { return c + ' ' + r.filter(function (x) { return x['구분'] === c; }).length; }).join(' · ');
+  if (k === 'patents') return '등록 ' + r.filter(function (x) { return x['상태'] === '등록'; }).length + '건 · 출원 ' + r.filter(function (x) { return x['상태'] !== '등록'; }).length + '건';
+  var now = today().slice(0, 7);
+  return '진행 ' + r.filter(function (x) { return x['종료'] >= now; }).length + '건 · 완료 ' + r.filter(function (x) { return x['종료'] < now; }).length + '건';
 }
 
 function tools(k) {
@@ -371,7 +374,7 @@ var FIELDS = {
     { c: '이름', w: 's3 k' }, { c: '영문 이름', w: 's3 k', ph: 'Hyung Jun Jung' },
     { c: '과정', type: 'select', opts: COURSES, w: 's3 k' }, { c: '상태', type: 'select', opts: ['재학', '졸업'], w: 's3 k' },
     { c: '이메일', type: 'email' }, { c: '연구 분야', ph: 'Cable Fault Diagnosis · Reflectometry' },
-    { c: '비고', hint: '졸업생의 현재 소속 등 · Alumni에 표시' }
+    { c: '비고', hint: '졸업생 현재 소속' }
   ],
   papers: [
     { c: '구분', type: 'select', opts: KINDS, w: 's2' }, { c: '연도', w: 's2 k', ph: '2026' }, { c: '월', w: 's2 k', ph: '10' },
@@ -384,11 +387,11 @@ var FIELDS = {
   ],
   patents: [
     { c: '구분', type: 'select', opts: ['국내', '국외'], w: 's2 k' }, { c: '상태', type: 'select', opts: ['출원', '등록'], w: 's2 k' }, { c: '국가', w: 's2', ph: '대한민국' },
-    { c: '발명의 명칭', type: 'textarea' }, { c: '발명자', hint: '쉼표로 구분, 마지막은 "및"' },
+    { c: '발명의 명칭', type: 'textarea' }, { c: '발명자' },
     { c: '출원번호', w: 's3 k' }, { c: '출원일', type: 'date', w: 's3 k' },
     { c: '등록번호', w: 's3 k', ph: '등록되면 입력' }, { c: '등록일', type: 'date', w: 's3 k' },
     { c: '출원인(권리자)', warn: true, ph: '예: 국립공주대학교 산학협력단' },
-    { c: '링크', type: 'url', hint: '선택 · 비우면 국내 등록 특허는 자동 생성' }
+    { c: '링크', type: 'url', hint: '선택' }
   ],
   projects: [
     { c: '과제명(국문)', type: 'textarea' }, { c: '과제명(영문)', type: 'textarea' },
@@ -396,8 +399,8 @@ var FIELDS = {
     { c: '기관 마크', type: 'logo' },
     { c: '시작', type: 'month', w: 's2 k' }, { c: '종료', type: 'month', w: 's2 k' },
     { c: '역할', type: 'select', opts: ['연구책임자', '공동연구책임자', '참여연구자'], w: 's2' },
-    { c: '총 연구비 (천원)', type: 'money', warn: true },
-    { c: '비고', hint: '선택 · 홈페이지에 표시되지 않음' }
+    { c: '총 연구비 (천원)', type: 'money', warn: true, hint: '과제 전체 금액' },
+    { c: '비고', hint: '선택' }
   ]
 };
 var DEFAULTS = {
@@ -423,7 +426,7 @@ function drawEditor(k, cur) {
   html += '<div class="f">' + FIELDS[k].map(function (f) { return fieldHtml(k, f, r, d); }).join('') + '</div>';
   html += '<label class="chk"><input type="checkbox" id="show"' + (r['홈페이지 표시'] === 'Y' ? ' checked' : '') + '> 홈페이지에 표시</label>';
   if (d.confirm) {
-    html += '<div class="confirm"><span><b>' + esc(cur.ID) + '을(를) 삭제할까요?</b> 홈페이지와 실적원장에서 모두 사라집니다. 홈페이지에서만 숨기려면 \'홈페이지에 표시\'를 끄고 저장하세요.</span>' +
+    html += '<div class="confirm"><span><b>' + esc(cur.ID) + '을(를) 삭제할까요?</b></span>' +
       '<div class="r"><button class="btn sm" id="noDel">취소</button><button class="btn sm redf" id="yesDel">삭제</button></div></div>';
   }
   html += '<div class="acts"><div class="r">' +
@@ -447,18 +450,15 @@ function fieldHtml(k, f, r, d) {
     case 'date': return '<label class="' + cls + '">' + label + '<input type="date" value="' + esc(normDate(v)) + '"' + attrs + '></label>';
     case 'month': return '<label class="' + cls + '">' + label + '<input type="month" value="' + esc(v) + '"' + attrs + '></label>';
     case 'money':
-      return '<label class="' + cls + '">' + label + '<input inputmode="numeric" value="' + esc(fmtMoney(v)) + '"' + attrs + ' placeholder="예: 250,000">' +
-        '<small style="color:var(--amber)">과제 전체의 총 연구비(전체 기간 합계, 참여 과제도 과제 전체 금액)를 한 번만 입력 · 홈페이지에는 표시되지 않습니다</small></label>';
+      return '<label class="' + cls + '">' + label + '<input inputmode="numeric" value="' + esc(fmtMoney(v)) + '"' + attrs + ' placeholder="예: 250,000"></label>';
     case 'photos': return photosHtml(r, d);
     case 'photo': return photoHtml(r, d);
     case 'logo': return logoHtml(r);
     case 'authors': return authorsHtml(d);
     case 'jcr':
-      var has = r['IF(최신)'] || r['JCR 상위%(최신)'];
-      return '<div class="note" style="grid-column:span 6">🔒 <b>IF · JCR</b>은 직접 입력하지 않습니다. ' +
-        (has ? '현재 값: IF ' + esc(r['IF(최신)'] || '—') + ' · 상위 ' + esc(r['JCR 상위%(최신)'] || '—') + '%' +
-          (r['IF(출판연도)'] ? ' (출판연도 IF ' + esc(r['IF(출판연도)']) + ' · 상위 ' + esc(r['JCR 상위%(출판연도)']) + '%)' : '')
-          : (r['구분'] === '국제 저널' ? 'JCR 대기 · 학교 네트워크에서 교수님이 따로 갱신합니다. 같은 학술지가 원장에 있으면 저장할 때 그 학술지의 최신 값이 먼저 들어갑니다.' : '학술대회·국내 논문은 해당 없음')) + '</div>';
+      if (r['구분'] !== '국제 저널') return '';
+      var jv = r['JCR 상위%(최신)'] ? 'IF ' + (r['IF(최신)'] || '—') + ' · 상위 ' + r['JCR 상위%(최신)'] + '%' : 'JCR 대기';
+      return '<label class="ro"><span>IF · JCR 상위% <small>(자동)</small></span><input value="' + esc(jv) + '" disabled></label>';
     default:
       return '<label class="' + cls + '">' + label + '<input type="' + (f.type || 'text') + '" value="' + esc(v) + '"' + attrs + '></label>';
   }
@@ -468,18 +468,18 @@ function fmtMoney(v) { v = String(v || '').replace(/[^\d]/g, ''); return v ? (+v
 
 function photosHtml(r, d) {
   var list = split(r['사진']);
-  return '<div style="grid-column:span 6;display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:500">사진 ' + list.length + '장 <small style="font-weight:400;color:var(--sub)">· 첫 사진이 대표 사진입니다</small></span>' +
+  return '<div style="grid-column:span 6;display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:500">사진 ' + list.length + '장</span>' +
     '<div class="photos">' + list.map(function (n, i) {
       return '<div class="ph"><img src="' + esc(d.previews[n] || imgSrc(n, 'news')) + '" alt="">' + (i === 0 ? '<span class="c">대표</span>' : '') +
         '<span class="x">' + (i ? '<button data-first="' + i + '" title="대표로">★</button>' : '') + '<button data-rm="' + i + '" title="빼기">✕</button></span></div>';
     }).join('') + '</div>' +
-    '<label class="add">📷 사진 찍기 · 앨범에서 고르기 (여러 장 가능)<input type="file" id="files" accept="image/*" multiple hidden></label></div>';
+    '<label class="add">📷 사진 추가<input type="file" id="files" accept="image/*" multiple hidden></label></div>';
 }
 function photoHtml(r, d) {
   var n = r['사진'];
   return '<div style="grid-column:span 6;display:flex;gap:14px;align-items:center">' +
     (n ? '<img src="' + esc(d.previews[n] || imgSrc(n, 'people')) + '" style="width:84px;height:112px;object-fit:cover;border-radius:6px" alt="">' : '<div style="width:84px;height:112px;border-radius:6px;background:#D5DFE4"></div>') +
-    '<label class="add" style="padding:0 14px">사진 ' + (n ? '바꾸기' : '올리기') + ' (세로 3:4 권장)<input type="file" id="file1" accept="image/*" hidden></label></div>';
+    '<label class="add" style="padding:0 14px">사진 ' + (n ? '바꾸기' : '올리기') + '<input type="file" id="file1" accept="image/*" hidden></label></div>';
 }
 function logoHtml(r) {
   var v = r['기관 마크'];
@@ -487,12 +487,12 @@ function logoHtml(r) {
     LOGOS.map(function (k) { return '<button data-logo="' + esc(k) + '" class="' + (k === v ? 'on' : '') + '" title="' + esc(k) + '"><img src="' + SITE + 'assets/img/agency/' + esc(k) + '.png?v=' + LOGO_V + '" alt="' + esc(k) + '"></button>'; }).join('') +
     '<button data-logo="" class="' + (!v ? 'on' : '') + '" title="로고 없음" style="font-size:12px;color:var(--sub)">없음</button>' +
     '<label class="add" style="width:48px;height:48px;min-height:0" title="새 로고 올리기">＋<input type="file" id="logoFile" accept="image/png,image/jpeg,image/svg+xml" hidden></label></div>' +
-    '<small style="color:var(--sub);font-size:12px">등록된 로고에서 고르거나 ＋로 새 기관 로고(배경이 투명한 PNG 권장)를 올리세요.</small></div>';
+    '</div>';
 }
 function authorsHtml(d) {
   var meRole = role(buildAuthors(d.authors));
-  return '<div style="grid-column:span 6;display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500">저자 <small style="font-weight:400;color:var(--sub)">· 순서대로, 해당 칸만 체크</small></span><button class="btn sm" id="auAdd" type="button">＋ 저자</button></div>' +
-    '<div class="authors"><div class="au"><span>#</span><span>이름 (예: G.-Y. Kwon / 권구영)</span><span>공동1¹</span><span>교신*</span><span></span></div>' +
+  return '<div style="grid-column:span 6;display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500">저자</span><button class="btn sm" id="auAdd" type="button">＋ 저자</button></div>' +
+    '<div class="authors"><div class="au"><span>#</span><span>이름</span><span>공동1¹</span><span>교신*</span><span></span></div>' +
     d.authors.map(function (a, i) {
       return '<div class="au' + (isMe(a.name) ? ' me' : '') + '"><span>' + (i + 1) + '</span><input type="text" data-au="' + i + '" value="' + esc(a.name) + '">' +
         '<input type="checkbox" data-auf="' + i + '"' + (a.first ? ' checked' : '') + '><input type="checkbox" data-auc="' + i + '"' + (a.corr ? ' checked' : '') + '>' +
@@ -651,19 +651,14 @@ function remove(k, cur) {
 /* ---------- 채워야 할 항목 ---------- */
 function drawTodo(v) {
   var t = todos(), jp = jcrPending();
-  var noDate = rows('papers').filter(function (r) { return !r['게재일']; }).length;
-  var c = function (cls, label, n, unit, note) { return '<div class="card stat ' + cls + '"><span style="font-size:13px;color:var(--sub)">' + label + '</span><span class="n">' + n + '<small style="font-size:15px;font-weight:500"> ' + unit + '</small></span><span style="font-size:12px;color:var(--sub)">' + note + '</span></div>'; };
-  v.innerHTML = '<div><h1>채워야 할 항목</h1><p class="lead">실적원장에서 비어 있는 칸을 모았습니다. 채우면 목록에서 사라집니다.</p></div>' +
-    '<div class="cards">' +
-    c(t.some(function (x) { return x.k === 'projects'; }) ? 'a' : '', '과제 총 연구비', t.filter(function (x) { return x.k === 'projects'; }).length, '건', '과제마다 한 번만 입력') +
-    c(t.some(function (x) { return x.k === 'patents'; }) ? 'a' : '', '특허 출원인', t.filter(function (x) { return x.k === 'patents'; }).length, '건', '출원·등록 특허의 권리자') +
-    c('', 'JCR 대기', jp.length, '편', '입력 불필요 · 따로 갱신') +
-    c('', '게재일', noDate, '편', '선택 · 비워 둬도 됨') + '</div>' +
+  var c = function (cls, label, n, unit) { return '<div class="card stat ' + cls + '"><span style="font-size:13px;color:var(--sub)">' + label + '</span><span class="n">' + n + '<small style="font-size:15px;font-weight:500"> ' + unit + '</small></span></div>'; };
+  var np = t.filter(function (x) { return x.k === 'projects'; }).length, nt = t.filter(function (x) { return x.k === 'patents'; }).length;
+  v.innerHTML = '<h1>채워야 할 항목</h1>' +
+    '<div class="cards">' + c(np ? 'a' : '', '과제 총 연구비', np, '건') + c(nt ? 'a' : '', '특허 출원인', nt, '건') + c('', 'JCR 대기', jp.length, '편') + '</div>' +
     '<section class="card list">' + (t.length ? t.map(function (x) {
       return '<div class="row" data-k="' + x.k + '" data-id="' + esc(x.id) + '" data-f="' + esc(x.f) + '"><span class="tag g" style="min-width:56px;text-align:center">' + esc(x.id) + '</span>' +
         '<div class="main"><span class="t">' + esc(x.t) + '</span><span class="s">' + LABEL[x.k] + '</span></div><span class="tag a">' + esc(x.label) + '</span><button class="btn sm">채우기</button></div>';
-    }).join('') : '<div class="empty">비어 있는 칸이 없습니다 🎉</div>') + '</section>' +
-    '<div class="note">JCR 대기 논문은 직접 입력하지 않아도 됩니다. JCR은 학교 네트워크에서만 열리므로 교수님이 따로 갱신합니다. 게재일은 학술지가 날짜를 공개하지 않은 경우가 많아 비워 둬도 됩니다.</div>';
+    }).join('') : '<div class="empty">비어 있는 칸이 없습니다 🎉</div>') + '</section>';
   $$('.row', v).forEach(function (el) { el.onclick = function () { go(el.dataset.k, el.dataset.id, el.dataset.f); }; });
 }
 
@@ -715,7 +710,9 @@ function csv(text) {
 /* ---------- 시작 ---------- */
 $('#me').textContent = ME;
 if (!LIVE) document.body.insertAdjacentHTML('afterbegin', '<div style="background:#F2B544;color:#1D2760;text-align:center;padding:6px;font-size:13px;font-weight:700">미리보기 모드 · 여기서 고친 내용은 저장되지 않습니다</div>');
-call('apiLoad').then(function (res) {
+var BOOT = null;
+try { BOOT = JSON.parse($('#boot').textContent); } catch (e) {}
+(BOOT ? Promise.resolve(BOOT) : call('apiLoad')).then(function (res) {
   DB = res.data; LOGOS = res.logos;
   drawMenu(); draw();
 }).catch(function (e) {
