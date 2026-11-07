@@ -172,12 +172,12 @@
   }
   function sortProjects(list) {
     return list.slice().sort(function (a, b) {
-      return String(b.start).localeCompare(String(a.start)) || byIdNum(a, b);
+      return String(b.start).localeCompare(String(a.start)) || byIdNum(b, a);
     });
   }
   function sortPapers(list) {
     return list.slice().sort(function (a, b) {
-      return (b.year - a.year) || ((parseInt(b.month, 10) || 0) - (parseInt(a.month, 10) || 0)) || byIdNum(a, b);
+      return (b.year - a.year) || ((parseInt(b.month, 10) || 0) - (parseInt(a.month, 10) || 0)) || byIdNum(b, a);
     });
   }
 
@@ -276,7 +276,7 @@
     var input = $('#pub-q', root), noteEl = $('[data-note]', root), chartEl = $('[data-chart]', root), xEl = $('[data-chart-x]', root);
     function items() {
       return current === '특허'
-        ? patents.slice().sort(function (a, b) { return String(b.date).localeCompare(String(a.date)) || byIdNum(a, b); })
+        ? patents.slice().sort(function (a, b) { return String(b.date).localeCompare(String(a.date)) || byIdNum(b, a); })
         : sortPapers(papers.filter(function (p) { return p.kind === current; }));
     }
     function text(it) { return [it.year, it.title, it.authors, it.venue, it.country, it.num].join(' ').toLowerCase(); }
