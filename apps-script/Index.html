@@ -10,6 +10,7 @@
 :root{--navy:#1D2760;--navy2:#2E3A7A;--teal:#007A70;--teal-d:#00665E;--teal-bg:#E8F3F1;--mint:#7FD3C6;--ink:#2B2F3A;--sub:#3F4450;--line:#E3E8EC;--field:#DCE3E7;--bg:#F4F7F8;--amber-bg:#FFF8EA;--amber-line:#F2D49B;--amber:#7A5000;--red:#B42318;--red-bg:#FCEDEC;--red-line:#E8B4B0}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{font-family:'Noto Sans KR',system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:15px}
 a{color:var(--navy)}
 button,input,select,textarea{font-family:inherit;font-size:15px;color:var(--ink)}
@@ -30,17 +31,17 @@ main{flex:1;min-width:0;padding:24px 32px 32px;display:flex;flex-direction:colum
 .top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
 h1{margin:0;font-size:26px;color:var(--navy)}
 .lead{margin:6px 0 0;font-size:14px;color:var(--sub)}
-.btn{height:44px;padding:0 20px;border-radius:8px;border:1px solid var(--field);background:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:14px}
+.btn{min-height:44px;padding:6px 20px;line-height:1.3;text-align:center;justify-content:center;border-radius:8px;border:1px solid var(--field);background:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:14px}
 .btn.pri{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:700}
 .btn.pri:disabled{opacity:.6;cursor:wait}
 .btn.del{border-color:var(--red-line);color:var(--red)}
 .btn.redf{background:var(--red);border-color:var(--red);color:#fff;font-weight:700}
-.btn.sm{height:34px;padding:0 12px;font-size:13px}
+.btn.sm{min-height:34px;padding:4px 12px;font-size:13px}
 .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(440px,540px);gap:20px;align-items:start}
 .card{background:#fff;border:1px solid var(--line);border-radius:12px}
 .list{overflow:hidden}
 .tools{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-.tools input{flex:1;min-width:160px;height:38px;padding:0 12px;border:1px solid var(--field);border-radius:8px}
+.tools input{flex:1;min-width:140px;min-height:38px;padding:0 12px;border:1px solid var(--field);border-radius:8px}
 .chip{all:unset;cursor:pointer;padding:6px 12px;border-radius:999px;background:var(--bg);font-size:13px}
 .chip.on{background:var(--navy);color:#fff}
 .rows{max-height:calc(100vh - 190px);overflow:auto}
@@ -67,12 +68,17 @@ h1{margin:0;font-size:26px;color:var(--navy)}
 @media (min-width:1101px){main{height:100vh;overflow:auto}.grid{flex:1;min-height:0;align-items:stretch}.list{display:flex;flex-direction:column;min-height:0}.rows{flex:1;max-height:none}.ed{min-height:0;overflow:auto}}
 .ed h2{margin:0;font-size:18px;color:var(--navy)}
 .f{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
-.f label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;grid-column:span 6}
+.f label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;grid-column:span 6;min-width:0}
 .f label.s2{grid-column:span 2}.f label.s3{grid-column:span 3}.f label.s4{grid-column:span 4}
 .f label small{font-weight:400;color:var(--sub)}
-.f input,.f select,.f textarea{height:42px;padding:0 10px;border:1px solid var(--field);border-radius:8px;background:#fff;width:100%}
+.f input,.f select,.f textarea{min-height:42px;padding:8px 10px;border:1px solid var(--field);border-radius:8px;background:#fff;width:100%;min-width:0;max-width:100%;box-sizing:border-box;line-height:1.4}
+/* 아이폰 사파리: 날짜 칸이 칸 밖으로 넘치거나 가운데 정렬되는 문제 */
+.f input[type=date],.f input[type=month]{-webkit-appearance:none;appearance:none;display:block;text-align:left}
+.f input::-webkit-date-and-time-value{text-align:left;min-height:1.4em}
+.f input[type=checkbox]{min-height:0}
 .f textarea{height:auto;padding:10px;resize:vertical;line-height:1.5}
 .f input::placeholder,.f textarea::placeholder,.doi input::placeholder{color:#A9B1C1}
+.f .ex,.ex.bar,.f label > span,.reqmark{overflow-wrap:anywhere;word-break:keep-all}
 .f .ex{font-size:12px;font-weight:400;color:#6B7385;line-height:1.4}
 .ex.bar{display:block;margin:-6px 2px 0;font-size:12px;color:#6B7385}
 .f .req > span:first-child::after,.reqmark::after{content:' 필수';font-size:11px;font-weight:700;color:#3156C8;margin-left:4px}
@@ -92,14 +98,17 @@ h1{margin:0;font-size:26px;color:var(--navy)}
 .note.amber{background:var(--amber-bg);border:1px solid var(--amber-line);color:var(--amber)}
 .doi{display:flex;gap:8px;padding:14px;border-radius:10px;background:var(--teal-bg);border:1px solid #CDE6E1;align-items:center}
 .doi b{color:var(--teal-d);font-size:14px}
-.doi input{flex:1;height:40px;padding:0 10px;border:1px solid #B9D9D2;border-radius:8px;min-width:0}
+.doi input{flex:1;min-height:40px;padding:0 10px;border:1px solid #B9D9D2;border-radius:8px;min-width:0}
 .authors{border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.au{display:grid;grid-template-columns:28px minmax(0,1fr) 54px 54px 64px;gap:8px;align-items:center;padding:6px 10px;border-top:1px solid var(--line);font-size:13px}
+.au{display:grid;grid-template-columns:28px minmax(0,1fr) 54px 54px 72px;gap:8px;align-items:center;padding:6px 10px;border-top:1px solid var(--line);font-size:13px}
 .au:first-child{border-top:0;background:var(--bg);font-weight:700;color:var(--sub);padding:8px 10px}
-.au input[type=text]{height:34px;padding:0 8px;border:1px solid var(--field);border-radius:6px;width:100%}
+.au input[type=text]{min-height:34px;min-width:0;padding:0 8px;border:1px solid var(--field);border-radius:6px;width:100%}
 .au input[type=checkbox]{width:18px;height:18px;accent-color:var(--teal);justify-self:center}
-.au .mv{display:flex;gap:2px}
-.au .mv button{all:unset;cursor:pointer;width:20px;text-align:center;color:var(--sub)}
+.au .mv{display:flex;gap:2px;justify-content:flex-end}
+.au .ck,.f .au .ck{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:4px;cursor:pointer;grid-column:auto;font-weight:400;min-width:0}
+.au .ck i{display:none;font-style:normal;font-size:13px;color:var(--sub)}
+.au > span{min-width:0;overflow-wrap:anywhere}
+.au .mv button{all:unset;cursor:pointer;min-width:22px;min-height:28px;text-align:center;color:var(--sub);font-size:15px;line-height:28px}
 .au.me{background:#F3FAF8}
 .preview{padding:10px 12px;border-radius:8px;background:var(--bg);font-size:13px;line-height:1.6}
 .photos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
@@ -110,7 +119,7 @@ h1{margin:0;font-size:26px;color:var(--navy)}
 .ph .x button{all:unset;cursor:pointer;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:13px;text-align:center;line-height:24px}
 .add{border:1.5px dashed #9FB0BA;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-size:13px;color:var(--sub);min-height:44px}
 .logos{display:flex;flex-wrap:wrap;gap:8px}
-.logos button{all:unset;cursor:pointer;width:48px;height:48px;border:1px solid var(--field);border-radius:8px;display:flex;align-items:center;justify-content:center;background:#fff}
+.logos button{all:unset;cursor:pointer;width:48px;height:48px;font-size:12px!important;overflow:hidden;border:1px solid var(--field);border-radius:8px;display:flex;align-items:center;justify-content:center;background:#fff}
 .logos button.on{border:2px solid var(--teal)}
 .logos img{max-width:34px;max-height:34px}
 .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
@@ -138,7 +147,7 @@ h1{margin:0;font-size:26px;color:var(--navy)}
   main{padding:16px 16px 32px;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));gap:14px}
   h1{font-size:22px}
   .top{flex-wrap:nowrap;align-items:center}
-  .top .btn{height:40px;padding:0 14px;flex:none}
+  .top .btn{min-height:40px;padding:4px 14px;flex:none}
   .lead{font-size:13px}
   /* 목록 ↔ 편집 한 번에 하나만 */
   .grid:not(.editing) .ed{display:none}
@@ -154,7 +163,13 @@ h1{margin:0;font-size:26px;color:var(--navy)}
   /* 아이폰에서 칸을 누를 때 화면이 확대되지 않게 16px */
   .f input,.f textarea,.f select,.tools input,.doi input,.au input[type=text],#logoKey{font-size:16px}
   .doi{flex-wrap:wrap}.doi input{flex:1 1 180px}
-  .au{grid-template-columns:22px minmax(0,1fr) 40px 40px 58px;gap:6px;padding:6px 8px}
+  .au{grid-template-columns:22px auto auto minmax(0,1fr);grid-template-areas:'n name name name' '. f c mv';gap:6px 14px;padding:8px}
+  .au.head{display:none}
+  .au > span:first-child{grid-area:n}.au > input[type=text]{grid-area:name}
+  .au > .ck:nth-of-type(1){grid-area:f;justify-content:flex-start}.au > .ck:nth-of-type(2){grid-area:c;justify-content:flex-start}
+  .au .ck i{display:inline}
+  .au .mv{grid-area:mv}
+  .stat span{overflow-wrap:anywhere}
   .photos{grid-template-columns:repeat(3,minmax(0,1fr))}
   .cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
   .stat{padding:12px}.stat .n{font-size:22px}
@@ -475,7 +490,7 @@ function drawEditor(k, cur) {
   }
   var d = DRAFT, r = d.row;
   var html = '<div class="edhead"><button class="btn sm back" id="back" type="button">← 목록</button><h2>' + (cur ? esc(cur.ID) + ' 수정' : '새 ' + LABEL[k]) + '</h2></div>';
-  if (k === 'patents') html += '<div class="doi"><b>번호</b><input id="pno" placeholder="10-2984629 · 10-2026-0137104 · US 11,609,258 · PCT/KR2018/009811"><button class="btn sm pri" id="pnoGo">가져오기</button></div><small class="ex bar">예) 국내 등록 10-2984629 · 국내 출원 10-2020-0164721 · 미국 US 11,609,258 · PCT/KR2018/009811 · WO2019/083144 · Google Patents 주소</small>';
+  if (k === 'patents') html += '<div class="doi"><b>번호</b><input id="pno" placeholder="등록번호 또는 출원번호"><button class="btn sm pri" id="pnoGo">가져오기</button></div><small class="ex bar">예) 국내 등록 10-2984629 · 국내 출원 10-2020-0164721 · 미국 US 11,609,258 · PCT/KR2018/009811 · WO2019/083144 · Google Patents 주소</small>';
   if (k === 'papers' && !cur) html += '<div class="doi"><b>DOI</b><input id="doi" placeholder="10.1109/TIM.2026.1234567"><button class="btn sm pri" id="doiGo">가져오기</button></div><small class="ex bar">예) 10.1109/TIM.2026.1234567 또는 https://doi.org/10.3390/app16189308</small>';
   html += '<div class="f">' + FIELDS[k].map(function (f) { return fieldHtml(k, f, r, d); }).join('') + '</div>';
   html += '<label class="chk"><input type="checkbox" id="show"' + (r['홈페이지 표시'] === 'Y' ? ' checked' : '') + '> 홈페이지에 표시</label>';
@@ -546,11 +561,12 @@ function logoHtml(r) {
 }
 function authorsHtml(d) {
   var meRole = role(buildAuthors(d.authors));
-  return '<div style="grid-column:span 6;display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500" class="reqmark">저자 <small style="font-weight:400;color:var(--sub)">· 영문 G.-Y. Kwon, 국문 권구영</small></span><button class="btn sm" id="auAdd" type="button">＋ 저자</button></div>' +
-    '<div class="authors"><div class="au"><span>#</span><span>이름</span><span>공동1¹</span><span>교신*</span><span></span></div>' +
+  return '<div style="grid-column:span 6;display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px"><span style="font-size:13px;font-weight:500;min-width:0" class="reqmark">저자 <small style="font-weight:400;color:var(--sub)">· 영문 G.-Y. Kwon, 국문 권구영</small></span><button class="btn sm" id="auAdd" type="button">＋ 저자</button></div>' +
+    '<div class="authors"><div class="au head"><span>#</span><span>이름</span><span>공동1¹</span><span>교신*</span><span></span></div>' +
     d.authors.map(function (a, i) {
       return '<div class="au' + (isMe(a.name) ? ' me' : '') + '"><span>' + (i + 1) + '</span><input type="text" data-au="' + i + '" value="' + esc(a.name) + '">' +
-        '<input type="checkbox" data-auf="' + i + '"' + (a.first ? ' checked' : '') + '><input type="checkbox" data-auc="' + i + '"' + (a.corr ? ' checked' : '') + '>' +
+        '<label class="ck"><input type="checkbox" data-auf="' + i + '"' + (a.first ? ' checked' : '') + '><i>공동1¹</i></label>' +
+        '<label class="ck"><input type="checkbox" data-auc="' + i + '"' + (a.corr ? ' checked' : '') + '><i>교신*</i></label>' +
         '<span class="mv"><button data-up="' + i + '" title="위로">↑</button><button data-dn="' + i + '" title="아래로">↓</button><button data-aurm="' + i + '" title="빼기">✕</button></span></div>';
     }).join('') + '</div>' +
     '<div class="preview"><span style="color:var(--sub)">원장 표기</span>&nbsp; ' + esc(buildAuthors(d.authors)) + '<br><span style="color:var(--sub)">교수님 역할</span>&nbsp; <b style="color:var(--teal-d)">' + esc(meRole) + '</b> (자동)</div></div>';
