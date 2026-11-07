@@ -414,7 +414,7 @@ function rowHtml(k, r) {
     tag = r['상태'] === '졸업' ? '<span class="tag g">졸업</span>' : '<span class="tag">재학</span>';
   } else if (k === 'papers') {
     t = r['논문 제목']; s = r.ID + ' · ' + r['연도'] + ' · ' + r['저널·학회명'];
-    tag = r['JCR 상위%(최신)'] ? '<span class="tag g">상위 ' + esc(r['JCR 상위%(최신)']) + '%</span>' : '';
+    tag = r['JCR 상위%(최신)'] ? '<span class="tag g">상위 ' + esc(r['JCR 상위%(최신)']) + '%</span>' : (r['등재 구분'] ? '<span class="tag g">' + esc(r['등재 구분']) + '</span>' : '');
   } else if (k === 'patents') {
     t = r['발명의 명칭']; s = r.ID + ' · ' + r['국가'] + ' · ' + (r['등록번호'] ? '등록 ' + r['등록번호'] : '출원 ' + r['출원번호']);
     tag = r['상태'] === '등록' ? '<span class="tag">등록</span>' : '<span class="tag a">출원</span>';
