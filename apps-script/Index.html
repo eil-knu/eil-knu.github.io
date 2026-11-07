@@ -816,6 +816,8 @@ function csv(text) {
 var FRAME_OK = [/^https:\/\/script\.google\.com$/, /\.googleusercontent\.com$/, /^https:\/\/eil-knu\.github\.io$/, /^http:\/\/localhost(:\d+)?$/];
 var bad = [].slice.call(location.ancestorOrigins || []).filter(function (o) { return !FRAME_OK.some(function (re) { return re.test(o); }); });
 if (bad.length) { document.body.innerHTML = '<p style="padding:40px;font-family:sans-serif">허용되지 않은 곳에서 열렸습니다. eil-knu.github.io/admin.html 에서 여세요.</p>'; throw new Error('blocked frame'); }
+// admin.html 에 "열렸다"고 알림 (안 오면 admin.html 이 새 창 방식으로 넘어감)
+try { window.top.postMessage('eil-admin-ready', 'https://eil-knu.github.io'); } catch (e) {}
 $('#me').textContent = ME;
 if (!LIVE) document.body.insertAdjacentHTML('afterbegin', '<div style="background:#F2B544;color:#1D2760;text-align:center;padding:6px;font-size:13px;font-weight:700">미리보기 모드 · 여기서 고친 내용은 저장되지 않습니다</div>');
 var BOOT = null;
