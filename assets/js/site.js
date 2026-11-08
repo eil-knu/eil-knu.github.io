@@ -117,9 +117,12 @@
     } else {
       if (p.vol) parts.push('vol. ' + p.vol);
       if (p.no && p.no !== '-') parts.push('no. ' + p.no);
-      if (pages) parts.push(/^Art\.?\s*/i.test(pages) ? pages.replace(/^Art\.?\s*(no\.)?\s*/i, 'Art. no. ') : 'pp. ' + pages);
+      // IEEE: 쪽수는 날짜 앞, Art. no.는 맨 끝 (vol. 75, Jun. 2026, Art. no. 3517110)
+      var art = /^Art\.?\s*/i.test(pages);
+      if (pages && !art) parts.push('pp. ' + pages);
       var mm = parseInt(p.month, 10);
       if (p.year) parts.push((mm >= 1 && mm <= 12 ? MONTHS[mm - 1] + ' ' : '') + p.year);
+      if (art) parts.push(pages.replace(/^Art\.?\s*(no\.)?\s*/i, 'Art. no. '));
     }
     return parts.join(', ');
   }

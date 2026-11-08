@@ -185,6 +185,20 @@ function apiUploadLogo(key, base64) {
   return key;
 }
 
+/** 기관 로고 지우기. 그 로고를 쓰는 과제가 있으면 막습니다. */
+function apiDeleteLogo(key) {
+  var email = guard_();
+  if (!/^[a-z0-9-]{2,20}$/.test(key)) throw new Error('로고 이름이 올바르지 않습니다.');
+  commitWithRetry_(function (head) {
+    var used = readCsv_(DATASETS.projects.file, head).rows
+      .filter(function (r) { return r['기관 마크'] === key; }).map(function (r) { return r.ID; });
+    if (used.length) throw new Error('이 로고를 쓰는 과제가 있어 지울 수 없습니다: ' + used.join(', ') + '. 그 과제의 로고를 먼저 바꿔 주세요.');
+    return { files: [{ path: 'assets/img/agency/' + key + '.png', del: true }],
+             message: '관리자: 기관 로고 삭제 ' + key + ' (' + who_(email) + ')' };
+  });
+  return key;
+}
+
 /** DOI로 논문 정보 가져오기 (Crossref). */
 function apiCrossref(doi) {
   guard_();
@@ -410,6 +424,7 @@ function commitWithRetry_(build) {
       return JSON.parse(r.getContentText()).sha;
     });
     var tree = plan.files.map(function (f) {
+      if (f.del) return { path: f.path, mode: '100644', type: 'blob', sha: null };   // 파일 삭제
       return f.base64 != null
         ? { path: f.path, mode: '100644', type: 'blob', sha: shas[imgs.indexOf(f)] }
         : { path: f.path, mode: '100644', type: 'blob', content: f.text };
@@ -599,11 +614,13 @@ function cite_(r) {
   var s = r['저자'] + ', "' + r['논문 제목'] + '," ' + r['저널·학회명'];
   if (r['Vol.']) s += ', vol. ' + r['Vol.'];
   if (r['No.'] && r['No.'] !== '-') s += ', no. ' + r['No.'];   // '-' = 호 없는 저널
-  var pg = String(r['페이지/Art. No.'] || '');
+  var pg = String(r['페이지/Art. No.'] || ''), art = /^Art\.?\s*/i.test(pg);
   if (/^\d+\s*[–-]\s*\d+$/.test(pg)) pg = 'pp. ' + pg;
-  if (pg) s += ', ' + pg.replace(/^Art\.\s*/, 'Art. no. ');
+  if (pg && !art) s += ', ' + pg;
   var m = +r['월'];
-  s += ', ' + (m >= 1 && m <= 12 ? MON[m - 1] + ' ' : '') + r['연도'] + '.';
+  s += ', ' + (m >= 1 && m <= 12 ? MON[m - 1] + ' ' : '') + r['연도'];
+  if (art) s += ', ' + pg.replace(/^Art\.?\s*(no\.)?\s*/i, 'Art. no. ');   // IEEE: Art. no.는 맨 끝
+  s += '.';
   var doi = String(r['DOI'] || '').match(/10\.\d{4,}\/\S+/);
   if (doi) s += ' doi: ' + doi[0] + '.';
   return s;
