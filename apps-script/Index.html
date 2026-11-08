@@ -808,8 +808,7 @@ function drawTodo(v) {
   var t = todos(), jp = jcrPending();
   var c = function (cls, label, n, unit) { return '<div class="card stat ' + cls + '"><span style="font-size:13px;color:var(--sub)">' + label + '</span><span class="n">' + n + '<small style="font-size:15px;font-weight:500"> ' + unit + '</small></span></div>'; };
   var n = function (k) { return t.filter(function (x) { return x.k === k; }).length; };
-  v.innerHTML = '<h1>채워야 할 항목</h1><p class="lead">실적원장에 들어가는 칸 중 비어 있는 곳입니다. 해당 없는 칸(학술대회의 권·호·페이지 등)과 JCR은 빼고 셉니다. 호가 없는 저널은 호 칸에 - 를 넣으세요.' +
-    (jp.length ? ' JCR 대기 ' + jp.length + '편은 교수님 요청 때 한꺼번에 갱신합니다.' : '') + '</p>' +
+  v.innerHTML = '<h1>채워야 할 항목</h1>' +
     '<div class="cards">' + ['papers', 'patents', 'projects'].map(function (k) { return c(n(k) ? 'a' : '', LABEL[k], n(k), '건'); }).join('') + '</div>' +
     '<section class="card list todo">' + (t.length ? t.map(function (x) {
       return '<div class="row" data-k="' + x.k + '" data-id="' + esc(x.id) + '" data-f="' + esc(x.f) + '"><span class="tag g" style="min-width:56px;text-align:center">' + esc(x.id) + '</span>' +
