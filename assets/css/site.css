@@ -227,7 +227,8 @@ button { font: inherit; }
 a.pub-title:hover { color: var(--teal); }
 .pub-authors { font-size: 14.5px; color: var(--text); }
 .pub-venue { font-size: 14px; color: var(--gray); }
-.pub-venue i { font-style: italic; color: var(--teal); font-weight: 500; }
+.pub-venue i { font-style: italic; }
+.pub-venue .vn { color: var(--teal); font-weight: 500; }   /* 학술지·학회명만 초록색 */
 @media (max-width: 600px) {
   .pub-list li { grid-template-columns: 1fr; padding: 18px 0; }
   .pub-list .yr { font-size: 17px; }
