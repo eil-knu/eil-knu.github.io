@@ -611,14 +611,16 @@ function writeTab_(ss, name, cols, rows) {
 /** IEEE 형식 인용 표기 */
 function cite_(r) {
   var MON = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.'];
-  var s = r['저자'] + ', "' + r['논문 제목'] + '," ' + r['저널·학회명'];
-  if (r['Vol.']) s += ', vol. ' + r['Vol.'];
+  var conf = /학술대회/.test(r['구분']);
+  var s = r['저자'] + ', "' + r['논문 제목'] + '," ' + (r['구분'] === '국제 학술대회' ? 'in Proc. ' : '') + r['저널·학회명'];
+  if (r['Vol.'] && r['Vol.'] !== '-') s += ', vol. ' + r['Vol.'];
   if (r['No.'] && r['No.'] !== '-') s += ', no. ' + r['No.'];   // '-' = 호 없는 저널
   var pg = String(r['페이지/Art. No.'] || ''), art = /^Art\.?\s*/i.test(pg);
   if (/^\d+\s*[–-]\s*\d+$/.test(pg)) pg = 'pp. ' + pg;
-  if (pg && !art) s += ', ' + pg;
+  if (pg && !art && !conf) s += ', ' + pg;   // 저널: 쪽수 → 날짜
   var m = +r['월'];
   s += ', ' + (m >= 1 && m <= 12 ? MON[m - 1] + ' ' : '') + r['연도'];
+  if (pg && !art && conf) s += ', ' + pg;    // 학술대회: 날짜 → 쪽수
   if (art) s += ', ' + pg.replace(/^Art\.?\s*(no\.)?\s*/i, 'Art. no. ');   // IEEE: Art. no.는 맨 끝
   s += '.';
   var doi = String(r['DOI'] || '').match(/10\.\d{4,}\/\S+/);

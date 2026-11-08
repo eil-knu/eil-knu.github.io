@@ -47,7 +47,7 @@
         var rows = parseCSV(t), head = rows.shift() || [];
         render(rows.map(function (r) {
           var o = {};
-          head.forEach(function (h, i) { o[h] = r[i] || ''; });
+          head.forEach(function (h, i) { var v = r[i] || ''; o[h] = v.trim() === '-' ? '' : v; });
           return o;
         }).filter(function (o) { return o['홈페이지 표시'] === 'Y'; }));
       })
@@ -112,16 +112,19 @@
       if (p.vol) parts.push('제' + p.vol + '권');
       if (p.no && p.no !== '-') parts.push('제' + p.no + '호');
       var head = parts.join(' '); parts = head ? [head] : [];
-      if (pages) parts.push(/^Art/i.test(pages) ? pages : 'pp. ' + pages);
-      if (p.year) parts.push(p.year + '년' + (p.month ? ' ' + p.month + '월' : ''));
+      var pg = pages ? (/^Art/i.test(pages) ? pages : 'pp. ' + pages) : '', ymd = p.year ? p.year + '년' + (p.month ? ' ' + p.month + '월' : '') : '';
+      // 저널: 쪽수 → 날짜, 학술대회: 날짜 → 쪽수 (IEEE와 같은 순서)
+      (/학술대회/.test(p.kind) ? [ymd, pg] : [pg, ymd]).forEach(function (x) { if (x) parts.push(x); });
     } else {
       if (p.vol) parts.push('vol. ' + p.vol);
       if (p.no && p.no !== '-') parts.push('no. ' + p.no);
-      // IEEE: 쪽수는 날짜 앞, Art. no.는 맨 끝 (vol. 75, Jun. 2026, Art. no. 3517110)
-      var art = /^Art\.?\s*/i.test(pages);
-      if (pages && !art) parts.push('pp. ' + pages);
-      var mm = parseInt(p.month, 10);
-      if (p.year) parts.push((mm >= 1 && mm <= 12 ? MONTHS[mm - 1] + ' ' : '') + p.year);
+      // IEEE 저널: vol., no., pp., Mon. year / 아티클 번호는 맨 끝 (vol. 75, Jun. 2026, Art. no. 3517110)
+      // IEEE 학술대회: in Proc. 학회명, 개최지, Mon. year, pp. 1–6.
+      var art = /^Art\.?\s*/i.test(pages), conf = /학술대회/.test(p.kind);
+      var mm = parseInt(p.month, 10), date = p.year ? (mm >= 1 && mm <= 12 ? MONTHS[mm - 1] + ' ' : '') + p.year : '';
+      if (pages && !art && !conf) parts.push('pp. ' + pages);
+      if (date) parts.push(date);
+      if (pages && !art && conf) parts.push('pp. ' + pages);
       if (art) parts.push(pages.replace(/^Art\.?\s*(no\.)?\s*/i, 'Art. no. '));
     }
     return parts.join(', ');
@@ -139,7 +142,7 @@
     var det = paperDetail(p);
     return title +
       '<span class="pub-authors">' + highlight(p.authors, q, true) + '</span>' +
-      '<span class="pub-venue"><i>' + highlight(p.venue, q) + '</i>' + (det ? ', ' + esc(det) : '') + '</span>' + jcrBadge(p);
+      '<span class="pub-venue">' + (p.kind === '국제 학술대회' ? 'in <i>Proc. ' : '<i>') + highlight(p.venue, q) + '</i>' + (det ? ', ' + esc(det) : '') + '</span>' + jcrBadge(p);
   }
   function patentItem(t, q) {
     var dom = t.country === '대한민국' || t.div === '국내';
