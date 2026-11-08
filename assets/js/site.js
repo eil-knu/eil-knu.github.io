@@ -144,7 +144,7 @@
     return title +
       '<span class="pub-authors">' + highlight(p.authors, q, true) + '</span>' +
       '<span class="pub-venue">' + (p.kind === '국제 학술대회'
-        ? (p.noProc ? 'presented at the <span class="vn">' + highlight(p.venue, q) + '</span>' : 'in <i>Proc. <span class="vn">' + highlight(p.venue, q) + '</span></i>')
+        ? (p.noProc ? 'presented at the <i class="vn">' + highlight(p.venue, q) + '</i>' : 'in <i>Proc. <span class="vn">' + highlight(p.venue, q) + '</span></i>')
         : '<i class="vn">' + highlight(p.venue, q) + '</i>') +
       (det ? ', ' + esc(det) : '') + '</span>' + jcrBadge(p);
   }
