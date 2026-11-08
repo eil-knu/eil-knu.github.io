@@ -300,8 +300,7 @@ var NEED = {
   papers: function (r) {
     var f = ['연도', '월', '논문 제목', '저자', '저널·학회명'];
     if (!/저널/.test(r['구분'])) return f;   // 학술대회: 페이지·DOI가 없는 경우가 많아 필수 아님
-    f = f.concat(['Vol.', 'No.', '페이지/Art. No.', 'ISSN/ISBN', 'DOI', '등재 구분', '게재일']);
-    return noIssue(r) ? f.filter(function (c) { return c !== 'No.'; }) : f;
+    return f.concat(['Vol.', 'No.', '페이지/Art. No.', 'ISSN/ISBN', 'DOI', '등재 구분', '게재일']);
   },
   patents: function (r) {
     var f = ['구분', '상태', '국가', '발명의 명칭', '발명자', '출원번호', '출원일', '출원인(권리자)', '링크'];
@@ -309,11 +308,6 @@ var NEED = {
   },
   projects: function () { return ['과제명(국문)', '과제명(영문)', '전문기관', '사업명', '시작', '종료', '역할', '총 연구비 (천원)']; }
 };
-/* 호(No.) 없이 권만 쓰는 저널 — 새로 생기면 여기에 추가 */
-function noIssue(r) {
-  var j = r['저널·학회명'];
-  return /^(Measurement|Electric Power Systems Research|Physica C)/.test(j) || (/Instrumentation and Measurement/.test(j) && +r['Vol.'] >= 70);
-}
 var SHORT = { 'Vol.': '권', 'No.': '호', '총 연구비 (천원)': '총 연구비', '출원인(권리자)': '출원인', '페이지/Art. No.': '페이지' };
 var TITLE = { papers: '논문 제목', patents: '발명의 명칭', projects: '과제명(국문)' };
 function todos() {
@@ -473,9 +467,9 @@ var FIELDS = {
     { c: '구분', type: 'select', opts: KINDS, w: 's2', req: 1 }, { c: '연도', w: 's2 k', ph: '2026', req: 1 }, { c: '월', w: 's2 k', ph: '9', ex: '숫자만' },
     { c: '논문 제목', type: 'textarea', req: 1 }, { c: '저자', type: 'authors', req: 1 },
     { c: '저널·학회명', req: 1, ph: 'IEEE Transactions on Instrumentation and Measurement', ex: '약어 말고 전체 이름. 학회는 개최지까지 예) IEEE I2MTC, Nancy, France' },
-    { c: 'Vol.', w: 's2 k', label: '권', ph: '75' }, { c: 'No.', w: 's2 k', label: '호', ph: '9' },
+    { c: 'Vol.', w: 's2 k', label: '권', ph: '75' }, { c: 'No.', w: 's2 k', label: '호', ph: '9', ex: '호가 없는 저널은 -' },
     { c: '페이지/Art. No.', w: 's2', label: '페이지/Art. No.', ph: 'Art. 9308', ex: '쪽이면 2192–2198' },
-    { c: '게재일', type: 'date', w: 's3 k', hint: '선택' }, { c: 'ISSN/ISBN', w: 's3 k', ph: '0018-9456' },
+    { c: '게재일', type: 'date', w: 's3 k', ex: '인쇄(호) 발행일, 없으면 온라인 게재일' }, { c: 'ISSN/ISBN', w: 's3 k', ph: '0018-9456' },
     { c: 'DOI', type: 'url', w: 's4', ph: 'https://doi.org/10.1109/TIM.2026.1234567' }, { c: '등재 구분', type: 'select', opts: ['', 'SCIE', 'SCOPUS', 'KCI', '기타'], w: 's2' },
     { type: 'jcr' }
   ],
@@ -786,7 +780,7 @@ function drawTodo(v) {
   var t = todos(), jp = jcrPending();
   var c = function (cls, label, n, unit) { return '<div class="card stat ' + cls + '"><span style="font-size:13px;color:var(--sub)">' + label + '</span><span class="n">' + n + '<small style="font-size:15px;font-weight:500"> ' + unit + '</small></span></div>'; };
   var n = function (k) { return t.filter(function (x) { return x.k === k; }).length; };
-  v.innerHTML = '<h1>채워야 할 항목</h1><p class="lead">실적원장에 들어가는 칸 중 비어 있는 곳입니다. 해당 없는 칸(학술대회의 권·호·페이지, 호가 없는 저널의 호 등)과 JCR은 빼고 셉니다.' +
+  v.innerHTML = '<h1>채워야 할 항목</h1><p class="lead">실적원장에 들어가는 칸 중 비어 있는 곳입니다. 해당 없는 칸(학술대회의 권·호·페이지 등)과 JCR은 빼고 셉니다. 호가 없는 저널은 호 칸에 - 를 넣으세요.' +
     (jp.length ? ' JCR 대기 ' + jp.length + '편은 교수님 요청 때 한꺼번에 갱신합니다.' : '') + '</p>' +
     '<div class="cards">' + ['papers', 'patents', 'projects'].map(function (k) { return c(n(k) ? 'a' : '', LABEL[k], n(k), '건'); }).join('') + '</div>' +
     '<section class="card list todo">' + (t.length ? t.map(function (x) {

@@ -110,13 +110,13 @@
     var pages = String(p.pages || '');
     if (dom) {
       if (p.vol) parts.push('제' + p.vol + '권');
-      if (p.no) parts.push('제' + p.no + '호');
+      if (p.no && p.no !== '-') parts.push('제' + p.no + '호');
       var head = parts.join(' '); parts = head ? [head] : [];
       if (pages) parts.push(/^Art/i.test(pages) ? pages : 'pp. ' + pages);
       if (p.year) parts.push(p.year + '년' + (p.month ? ' ' + p.month + '월' : ''));
     } else {
       if (p.vol) parts.push('vol. ' + p.vol);
-      if (p.no) parts.push('no. ' + p.no);
+      if (p.no && p.no !== '-') parts.push('no. ' + p.no);
       if (pages) parts.push(/^Art\.?\s*/i.test(pages) ? pages.replace(/^Art\.?\s*(no\.)?\s*/i, 'Art. no. ') : 'pp. ' + pages);
       var mm = parseInt(p.month, 10);
       if (p.year) parts.push((mm >= 1 && mm <= 12 ? MONTHS[mm - 1] + ' ' : '') + p.year);

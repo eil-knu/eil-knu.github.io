@@ -194,12 +194,12 @@ function apiCrossref(doi) {
     { muteHttpExceptions: true, headers: { 'User-Agent': 'eil-admin/1.0' } });
   if (res.getResponseCode() !== 200) throw new Error('DOI를 찾지 못했습니다. 직접 입력해 주세요.');
   var w = JSON.parse(res.getContentText()).message;
-  var date = '';
-  ['published-online', 'published-print', 'issued'].some(function (k) {
-    var dp = ((w[k] || {})['date-parts'] || [[]])[0];
-    if (dp.length === 3) { date = dp[0] + '-' + pad_(dp[1]) + '-' + pad_(dp[2]); return true; }
-    return false;
-  });
+  // 게재일: 인쇄(호) 발행일이 있으면 그 날짜(일이 없으면 1일), 온라인 게재일보다 이르면 온라인 날짜 — 둘 중 늦은 날
+  var dp_ = function (k) { return (((w[k] || {})['date-parts'] || [[]])[0] || []).filter(function (x) { return x; }); };
+  var po = dp_('published-online'), pp = dp_('published-print');
+  var online = po.length === 3 ? po[0] + '-' + pad_(po[1]) + '-' + pad_(po[2]) : String((w.created || {})['date-time'] || '').slice(0, 10);
+  var date = pp.length >= 2 ? pp[0] + '-' + pad_(pp[1]) + '-' + pad_(pp[2] || 1) : '';
+  if (!date || online > date) date = online;
   var issued = ((w.issued || {})['date-parts'] || [[]])[0];
   var page = w['article-number'] ? 'Art. ' + w['article-number'] : (w.page ? (/-/.test(w.page) ? 'pp. ' + w.page.replace('-', '–') : 'Art. ' + w.page) : '');
   return {
@@ -208,7 +208,7 @@ function apiCrossref(doi) {
     journal: (w['container-title'] || [''])[0],
     year: issued[0] ? String(issued[0]) : '',
     month: issued[1] ? String(issued[1]) : '',
-    volume: w.volume || '', issue: w.issue || '', page: page, date: date,
+    volume: w.volume || '', issue: w.issue || (w.type === 'journal-article' ? '-' : ''), page: page, date: date,
     issn: (w.ISSN || w.ISBN || [''])[0],
     doi: 'https://doi.org/' + w.DOI,
     authors: (w.author || []).map(function (a) { return a.family ? initials_(a.given) + a.family : (a.name || ''); })
@@ -598,7 +598,7 @@ function cite_(r) {
   var MON = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.'];
   var s = r['저자'] + ', "' + r['논문 제목'] + '," ' + r['저널·학회명'];
   if (r['Vol.']) s += ', vol. ' + r['Vol.'];
-  if (r['No.']) s += ', no. ' + r['No.'];
+  if (r['No.'] && r['No.'] !== '-') s += ', no. ' + r['No.'];   // '-' = 호 없는 저널
   var pg = String(r['페이지/Art. No.'] || '');
   if (/^\d+\s*[–-]\s*\d+$/.test(pg)) pg = 'pp. ' + pg;
   if (pg) s += ', ' + pg.replace(/^Art\.\s*/, 'Art. no. ');
