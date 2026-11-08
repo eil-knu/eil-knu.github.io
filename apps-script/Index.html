@@ -56,6 +56,7 @@ h1{margin:0;font-size:26px;color:var(--navy)}
 .row .t{font-size:14px;font-weight:500;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row .s{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row.hidden .t{color:#8A92A6}
+.row .s.miss{color:#8A5A00;white-space:normal}
 .thumb{width:56px;height:42px;flex:none;border-radius:6px;background:#D5DFE4;object-fit:cover}
 .thumb.p{width:36px;height:48px}
 .logo{width:40px;height:40px;flex:none;border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;background:#fff}
@@ -65,7 +66,7 @@ h1{margin:0;font-size:26px;color:var(--navy)}
 .tag.g{background:var(--bg);color:var(--sub)}
 .ed{padding:20px 22px 0;display:flex;flex-direction:column;gap:14px}
 /* 넓은 화면: 한 화면에 꽉 차게, 목록과 편집 창이 각자 스크롤 */
-@media (min-width:1101px){main{height:100vh;overflow:auto}.grid{flex:1;min-height:0;align-items:stretch}.list{display:flex;flex-direction:column;min-height:0}.rows{flex:1;max-height:none}.ed{min-height:0;overflow:auto}}
+@media (min-width:1101px){main{height:100vh;overflow:auto}.grid{flex:1;min-height:0;align-items:stretch}.list{display:flex;flex-direction:column;min-height:0}.rows{flex:1;max-height:none}.list.todo{overflow:auto;flex:0 1 auto}.ed{min-height:0;overflow:auto}}
 .ed h2{margin:0;font-size:18px;color:var(--navy)}
 .f{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
 .f label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;grid-column:span 6;min-width:0}
@@ -294,10 +295,28 @@ function role(s) {
 }
 
 /* ---------- 할 일 ---------- */
+/* 실적원장에 들어가는 칸 중 비어 있는 것 (해당 없는 칸·자동 계산 칸·JCR·비고는 제외) */
+var NEED = {
+  papers: function (r) {
+    var f = ['연도', '월', '논문 제목', '저자', '저널·학회명', '페이지/Art. No.', 'DOI'];
+    return /저널/.test(r['구분']) ? f.concat(['Vol.', 'No.', 'ISSN/ISBN', '등재 구분', '게재일']) : f;
+  },
+  patents: function (r) {
+    var f = ['구분', '상태', '국가', '발명의 명칭', '발명자', '출원번호', '출원일', '출원인(권리자)', '링크'];
+    return r['상태'] === '등록' ? f.concat(['등록번호', '등록일']) : f;
+  },
+  projects: function () { return ['과제명(국문)', '과제명(영문)', '전문기관', '사업명', '시작', '종료', '역할', '총 연구비 (천원)']; }
+};
+var SHORT = { 'Vol.': '권', 'No.': '호', '총 연구비 (천원)': '총 연구비', '출원인(권리자)': '출원인', '페이지/Art. No.': '페이지' };
+var TITLE = { papers: '논문 제목', patents: '발명의 명칭', projects: '과제명(국문)' };
 function todos() {
   var list = [];
-  rows('projects').forEach(function (r) { if (!r['총 연구비 (천원)']) list.push({ k: 'projects', id: r.ID, t: r['과제명(국문)'], f: '총 연구비 (천원)', label: '총 연구비' }); });
-  rows('patents').forEach(function (r) { if (!r['출원인(권리자)']) list.push({ k: 'patents', id: r.ID, t: r['발명의 명칭'], f: '출원인(권리자)', label: '출원인' }); });
+  ['papers', 'patents', 'projects'].forEach(function (k) {
+    rows(k).forEach(function (r) {
+      var miss = NEED[k](r).filter(function (c) { return !String(r[c] || '').trim(); });
+      if (miss.length) list.push({ k: k, id: r.ID, t: r[TITLE[k]], f: miss[0], miss: miss.map(function (c) { return SHORT[c] || c; }) });
+    });
+  });
   return list;
 }
 function jcrPending() {
@@ -759,12 +778,13 @@ function remove(k, cur) {
 function drawTodo(v) {
   var t = todos(), jp = jcrPending();
   var c = function (cls, label, n, unit) { return '<div class="card stat ' + cls + '"><span style="font-size:13px;color:var(--sub)">' + label + '</span><span class="n">' + n + '<small style="font-size:15px;font-weight:500"> ' + unit + '</small></span></div>'; };
-  var np = t.filter(function (x) { return x.k === 'projects'; }).length, nt = t.filter(function (x) { return x.k === 'patents'; }).length;
-  v.innerHTML = '<h1>채워야 할 항목</h1>' +
-    '<div class="cards">' + c(np ? 'a' : '', '과제 총 연구비', np, '건') + c(nt ? 'a' : '', '특허 출원인', nt, '건') + c('', 'JCR 대기', jp.length, '편') + '</div>' +
+  var n = function (k) { return t.filter(function (x) { return x.k === k; }).length; };
+  v.innerHTML = '<h1>채워야 할 항목</h1><p class="lead">실적원장에 들어가는 칸 중 비어 있는 곳입니다. 해당 없는 칸(학술대회의 권·호 등)과 JCR은 빼고 셉니다.' +
+    (jp.length ? ' JCR 대기 ' + jp.length + '편은 교수님 요청 때 한꺼번에 갱신합니다.' : '') + '</p>' +
+    '<div class="cards">' + ['papers', 'patents', 'projects'].map(function (k) { return c(n(k) ? 'a' : '', LABEL[k], n(k), '건'); }).join('') + '</div>' +
     '<section class="card list todo">' + (t.length ? t.map(function (x) {
       return '<div class="row" data-k="' + x.k + '" data-id="' + esc(x.id) + '" data-f="' + esc(x.f) + '"><span class="tag g" style="min-width:56px;text-align:center">' + esc(x.id) + '</span>' +
-        '<div class="main"><span class="t">' + esc(x.t) + '</span><span class="s">' + LABEL[x.k] + '</span></div><span class="tag a">' + esc(x.label) + '</span><button class="btn sm">채우기</button></div>';
+        '<div class="main"><span class="t">' + esc(x.t) + '</span><span class="s miss">빈 칸: ' + esc(x.miss.join(', ')) + '</span></div><button class="btn sm">채우기</button></div>';
     }).join('') : '<div class="empty">비어 있는 칸이 없습니다 🎉</div>') + '</section>';
   $$('.row', v).forEach(function (el) { el.onclick = function () { go(el.dataset.k, el.dataset.id, el.dataset.f); }; });
 }
