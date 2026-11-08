@@ -612,10 +612,12 @@ function writeTab_(ss, name, cols, rows) {
 function cite_(r) {
   var MON = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.'];
   var conf = /학술대회/.test(r['구분']);
-  var s = r['저자'] + ', "' + r['논문 제목'] + '," ' + (r['구분'] === '국제 학술대회' ? 'in Proc. ' : '') + r['저널·학회명'];
+  // 국제 학술대회: proceedings가 있으면 "in Proc.", 페이지가 '-'(발표만 하는 학회)면 "presented at the"
+  var pre = r['구분'] === '국제 학술대회' ? (String(r['페이지/Art. No.']).trim() === '-' ? 'presented at the ' : 'in Proc. ') : '';
+  var s = r['저자'] + ', "' + r['논문 제목'] + '," ' + pre + r['저널·학회명'];
   if (r['Vol.'] && r['Vol.'] !== '-') s += ', vol. ' + r['Vol.'];
   if (r['No.'] && r['No.'] !== '-') s += ', no. ' + r['No.'];   // '-' = 호 없는 저널
-  var pg = String(r['페이지/Art. No.'] || ''), art = /^Art\.?\s*/i.test(pg);
+  var pg = String(r['페이지/Art. No.'] || '').replace(/^\s*-\s*$/, ''), art = /^Art\.?\s*/i.test(pg);
   if (/^\d+\s*[–-]\s*\d+$/.test(pg)) pg = 'pp. ' + pg;
   if (pg && !art && !conf) s += ', ' + pg;   // 저널: 쪽수 → 날짜
   var m = +r['월'];

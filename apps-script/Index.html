@@ -471,7 +471,7 @@ var FIELDS = {
     { c: '논문 제목', type: 'textarea', req: 1 }, { c: '저자', type: 'authors', req: 1 },
     { c: '저널·학회명', req: 1, ph: 'IEEE Transactions on Instrumentation and Measurement', ex: '약어 말고 전체 이름. 학회는 개최지까지 예) IEEE I2MTC, Nancy, France' },
     { c: 'Vol.', w: 's2 k', label: '권', ph: '75' }, { c: 'No.', w: 's2 k', label: '호', ph: '9', ex: '호가 없는 저널은 -' },
-    { c: '페이지/Art. No.', w: 's2', label: '페이지/Art. No.', ph: 'Art. 9308', ex: '쪽이면 2192–2198' },
+    { c: '페이지/Art. No.', w: 's2', label: '페이지/Art. No.', ph: 'Art. 9308', ex: '쪽이면 2192–2198 · proceedings 없이 발표만 하는 학회(ASC 등)는 -' },
     { c: '게재일', type: 'date', w: 's3 k', ex: '인쇄(호) 발행일, 없으면 온라인 게재일' }, { c: 'ISSN/ISBN', w: 's3 k', ph: '0018-9456' },
     { c: 'DOI', type: 'url', w: 's4', ph: 'https://doi.org/10.1109/TIM.2026.1234567' }, { c: '등재 구분', type: 'select', opts: ['', 'SCIE', 'SCOPUS', 'KCI', '기타'], w: 's2' },
     { type: 'jcr' }

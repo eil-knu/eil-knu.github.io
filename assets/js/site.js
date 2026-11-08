@@ -47,7 +47,7 @@
         var rows = parseCSV(t), head = rows.shift() || [];
         render(rows.map(function (r) {
           var o = {};
-          head.forEach(function (h, i) { var v = r[i] || ''; o[h] = v.trim() === '-' ? '' : v; });
+          head.forEach(function (h, i) { var v = r[i] || ''; if (v.trim() === '-') { o['-' + h] = true; v = ''; } o[h] = v; });   // '-' = 해당 없음
           return o;
         }).filter(function (o) { return o['홈페이지 표시'] === 'Y'; }));
       })
@@ -81,6 +81,7 @@
   function toPaper(r) {
     return { id: r['ID'], kind: r['구분'], year: r['연도'], month: r['월'], title: r['논문 제목'], authors: r['저자'],
              venue: r['저널·학회명'], vol: r['Vol.'], no: r['No.'], pages: r['페이지/Art. No.'], doi: r['DOI'],
+             noProc: !!r['-페이지/Art. No.'],   // 학술대회 페이지가 '-' = proceedings 없는 학회(발표만)
              // 화면에는 최신 IF·JCR 상위%만 표시합니다 (출판연도 값은 실적원장용).
              ifNow: r['IF(최신)'], rankNow: r['JCR 상위%(최신)'] };
   }
@@ -142,7 +143,8 @@
     var det = paperDetail(p);
     return title +
       '<span class="pub-authors">' + highlight(p.authors, q, true) + '</span>' +
-      '<span class="pub-venue">' + (p.kind === '국제 학술대회' ? 'in <i>Proc. ' : '<i>') + highlight(p.venue, q) + '</i>' + (det ? ', ' + esc(det) : '') + '</span>' + jcrBadge(p);
+      '<span class="pub-venue">' + (p.kind === '국제 학술대회' ? (p.noProc ? 'presented at the ' + highlight(p.venue, q) : 'in <i>Proc. ' + highlight(p.venue, q) + '</i>') : '<i>' + highlight(p.venue, q) + '</i>') +
+      (det ? ', ' + esc(det) : '') + '</span>' + jcrBadge(p);
   }
   function patentItem(t, q) {
     var dom = t.country === '대한민국' || t.div === '국내';
