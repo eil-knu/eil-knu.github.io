@@ -1,14 +1,14 @@
 ID,구분,상태,국가,발명의 명칭,발명자,출원번호,출원일,등록번호,등록일,출원인(권리자),링크,홈페이지 표시
-PT-022,국내,출원,대한민국,케이블 고장 위치 검출 장치 및 방법,"노우진, 김윤겸, 정형준 및 권구영",10-2026-0137104,2026-07-24,,,국립공주대학교 산학협력단; (주)그리드큐어,,Y
+PT-022,국내,출원,대한민국,케이블 고장 위치 검출 장치 및 방법,"노우진, 김윤겸, 정형준 및 권구영",10-2026-0137104,2026-07-24,,,국립공주대학교 산학협력단; (주)그리드큐어,https://doi.org/10.8080/1020260137104,Y
 PT-021,국내,등록,대한민국,반사파 계측법을 이용한 케이블 진단 장치,"박대진, 손시호, 김남열, 장경훈, 신용준, 방수식, 이영호, 권구영 및 임호빈",10-2020-0164721,2020-11-30,10-2984629,2026-06-30,엘에스전선 주식회사; 연세대학교 산학협력단,https://doi.org/10.8080/1020200164721,Y
 PT-020,국내,등록,대한민국,반사파 계측법을 이용한 케이블 진단 장치 및 방법,"김남열, 손시호, 박대진, 장경훈, 신용준, 방수식, 이영호, 권구영 및 임호빈",10-2020-0164720,2020-11-30,10-2978023,2026-06-11,엘에스전선 주식회사; 연세대학교 산학협력단,https://doi.org/10.8080/1020200164720,Y
 PT-019,국외,등록,오스트리아,Device and method for detecting a fault in an underground cable,"C.-K. Jung, Y.-J. Shin, G.-Y. Kwon, T.-K. Kim, and J.-S. Hwang",A 9285/2018,2018-08-24,527561,2026-05-15,Korea Electric Power Corp,https://patents.google.com/patent/AT527561B1,Y
 PT-018,국내,등록,대한민국,반사측정 기반의 전파상수 및 유전손실을 이용하는 케이블 열화 진단을 위한 장치 및 방법,"이춘권, 권구영 및 장승진",10-2023-0156568,2023-11-13,10-2959377,2026-04-27,국립부경대학교 산학협력단; 동국대학교 와이즈캠퍼스 산학협력단; 국립한밭대학교 산학협력단,https://doi.org/10.8080/1020230156568,Y
 PT-017,국내,등록,대한민국,전력 케이블의 열 시정수 연산 방법 및 연산 장치,"신용준, 한예진, 권구영, 김봉진, 손천명 및 전미정",10-2021-0018162,2021-02-09,10-2582568,2023-09-20,연세대학교 산학협력단; 한전케이디엔주식회사,https://doi.org/10.8080/1020210018162,Y
-PT-016,국외,등록,미국,Apparatus and method for detecting cable fault based on reflectometry using AI,Y.-J. Shin and G.-Y. Kwon,"US 17/371,776",2021-07-09,"11,609,258",2023-03-21,University Industry Foundation UIF of Yonsei University,,Y
+PT-016,국외,등록,미국,Apparatus and method for detecting cable fault based on reflectometry using AI,Y.-J. Shin and G.-Y. Kwon,"US 17/371,776",2021-07-09,"11,609,258",2023-03-21,University Industry Foundation UIF of Yonsei University,https://patents.google.com/patent/US11609258B2,Y
 PT-015,국내,등록,대한민국,인공지능을 활용한 반사파 계측법 기반 케이블 이상 탐지 장치 및 방법,신용준 및 권구영,10-2021-0061293,2021-05-12,10-2493318,2023-01-25,연세대학교 산학협력단,https://doi.org/10.8080/1020210061293,Y
-PT-014,국외,등록,미국,Device and method for detecting failure location of underground cable,"C.-K. Jung, Y.-J. Shin, G.-Y. Kwon, T.-K. Kim, and J.-S. Hwang","US 16/652,135",2018-08-24,"11,226,361",2022-01-18,Korea Electric Power Corp,,Y
-PT-013,국외,등록,미국,Reflected-wave processing apparatus,"S.-H. Sohn, S.-C. Han, H.-S. Yang, S.-W. Yim, Y.-J. Shin, G.-S. Lee, S.-S. Bang, Y.-H. Lee, and G.-Y. Kwon","US 16/345,694",2016-11-22,"10,942,210",2021-03-09,Korea Electric Power Corp,,Y
+PT-014,국외,등록,미국,Device and method for detecting failure location of underground cable,"C.-K. Jung, Y.-J. Shin, G.-Y. Kwon, T.-K. Kim, and J.-S. Hwang","US 16/652,135",2018-08-24,"11,226,361",2022-01-18,Korea Electric Power Corp,https://patents.google.com/patent/US11226361B2,Y
+PT-013,국외,등록,미국,Reflected-wave processing apparatus,"S.-H. Sohn, S.-C. Han, H.-S. Yang, S.-W. Yim, Y.-J. Shin, G.-S. Lee, S.-S. Bang, Y.-H. Lee, and G.-Y. Kwon","US 16/345,694",2016-11-22,"10,942,210",2021-03-09,Korea Electric Power Corp,https://patents.google.com/patent/US10942210B2,Y
 PT-012,국내,등록,대한민국,시간 영역 반사파 계측법 및 일반 회귀 신경망을 이용한 케이블 모델링 시스템 및 방법,"신용준, 권구영, 방수식, 이건석 및 이영호",10-2019-0085241,2019-07-15,10-2163619,2020-09-29,연세대학교 산학협력단,https://doi.org/10.8080/1020190085241,Y
 PT-011,국내,등록,대한민국,"케이블 고장 예측 장치, 방법 및 시스템","신용준, 권구영 및 이춘권",10-2018-0100534,2018-08-27,10-2058230,2019-12-16,연세대학교 산학협력단,https://doi.org/10.8080/1020180100534,Y
 PT-010,국내,등록,대한민국,계단-주파수 반사파 계측법을 이용하는 케이블 결함 평가 시스템 및 방법,"신용준, 이춘권 및 권구영",10-2018-0107826,2018-09-10,10-2036790,2019-10-21,연세대학교 산학협력단,https://doi.org/10.8080/1020180107826,Y
