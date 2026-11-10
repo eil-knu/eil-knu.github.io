@@ -189,6 +189,7 @@ button { font: inherit; }
   .area h3 { margin-top: 0; font-size: 17px; }
   .area p { font-size: 14px; }
 }
+@media (max-width: 360px) { .area { grid-template-columns: 96px minmax(0, 1fr); gap: 4px 12px; } }   /* 아주 작은 폰: 글 칸 확보 */
 
 /* ---------- Home: news ---------- */
 .news-home { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); gap: 36px; align-items: stretch; }

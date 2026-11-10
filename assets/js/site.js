@@ -138,7 +138,7 @@
   function pubItem(p, q) {
     var url = doiUrl(p.doi);
     var title = url
-      ? '<a class="pub-title" href="' + esc(url) + '" target="_blank" rel="noopener">' + highlight(p.title, q) + '<span class="ext-ic" aria-hidden="true"> ↗</span></a>'
+      ? '<a class="pub-title" href="' + esc(url) + '" target="_blank" rel="noopener">' + highlight(p.title, q) + '<span class="ext-ic" aria-hidden="true">\u00A0↗</span></a>'
       : '<span class="pub-title">' + highlight(p.title, q) + '</span>';
     var det = paperDetail(p);
     return title +
@@ -155,7 +155,7 @@
     var det = [num, t.date ? dotDate(t.date) : ''].filter(Boolean).join(', ');
     var url = doiUrl(t.link);
     var title = url
-      ? '<a class="pub-title" href="' + esc(url) + '" target="_blank" rel="noopener">' + highlight(t.title, q) + '<span class="ext-ic" aria-hidden="true"> ↗</span></a>'
+      ? '<a class="pub-title" href="' + esc(url) + '" target="_blank" rel="noopener">' + highlight(t.title, q) + '<span class="ext-ic" aria-hidden="true">\u00A0↗</span></a>'
       : '<span class="pub-title">' + highlight(t.title, q) + '</span>';
     return title +
       '<span class="pub-authors">' + highlight(t.authors, q, true) + '</span>' +
@@ -528,6 +528,29 @@
   var REVEAL = '.area, .news-feature, .news-row, .pub-list li, .proj, .mem, .year-group, .news-card, .interest, ' +
     '.timeline li, .c-card, .area-row, .intro > *, .pillars .p, .join, .map-wrap, .prof > *, .tl';
   var io = null, reduceMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  // 한글 문단 줄바꿈 다듬기 (화면 폭과 무관하게 자동 적용)
+  //  · '등'은 앞 어절에, '및'은 뒤 어절에 붙여 줄 첫머리/끝에 홀로 남지 않게
+  //  · 가운뎃점(·)이 줄 첫머리에 오지 않게 (해저·송배전 …)
+  //  · 마지막 줄에 짧은 한 어절(예: '연구합니다.')만 남지 않게 마지막 두 어절을 붙임
+  var ctx = document.createElement('canvas').getContext('2d');
+  function tidyWrap(root) {
+    $all('.banner p, .hero .desc, .area p, .intro .txt p, .area-row .txt > p:not(.kw), .join p, .pillars small, .interest p', root).forEach(function (el) {
+      var w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), n, nodes = [];
+      while ((n = w.nextNode())) nodes.push(n);
+      nodes.forEach(function (t) { t.data = t.data.replace(/ 등(?=[\s,.)]|$)/g, '\u00A0등').replace(/(^|\s)및 /g, '$1및\u00A0').replace(/(\S)·/g, '$1\u2060·'); });
+      // 마지막 두 어절을 붙였을 때 줄 폭의 80%를 넘으면(좁은 카드 등) 붙이지 않음
+      var cw = el.clientWidth, cs = getComputedStyle(el), tail = '';
+      if (!cw) return;
+      ctx.font = cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+      for (var i = nodes.length - 1; i >= 0; i--) {
+        var d = nodes[i].data.replace(/\s+$/, ''), k = d.lastIndexOf(' ');
+        if (k < 0) { tail = d.trim() + tail; if (tail.length > 8) break; continue; }
+        var last = d.slice(k + 1) + tail, prev = d.slice(0, k).trim().split(/\s/).pop();
+        if (last.length <= 8 && ctx.measureText(prev + ' ' + last).width <= cw * 0.8) nodes[i].data = d.slice(0, k) + '\u00A0' + nodes[i].data.slice(k + 1);
+        break;
+      }
+    });
+  }
   function reveal(root) {
     if (reduceMotion || !('IntersectionObserver' in window)) return;
     if (!io) io = new IntersectionObserver(function (es) {
@@ -638,6 +661,7 @@
       var fn = RENDER[el.getAttribute('data-render')];
       if (fn) fn(el);
     });
+    tidyWrap(document);
     reveal(document);
     $all('[data-kakao-map]').forEach(kakaoMap);
     toTop();
