@@ -564,3 +564,11 @@ h1, h2, .sec-head h2, .interest h3, .area h3 { text-wrap: balance; }
 /* 머리 문장·소개문 줄 길이를 고르게, 키워드는 키워드 사이에서만 줄바꿈 */
 .banner p, .hero .desc { text-wrap: balance; }
 .area-row .kw .nowrap { white-space: nowrap; }
+
+/* ---------- 배너 색 테마: 네이비 (scripts/build.py의 THEME = "navy"일 때만 적용) ---------- */
+.theme-navy .hero, .theme-navy .banner { background: linear-gradient(120deg, #1D2760 0%, #18355E 55%, #0E4C55 100%); border-bottom: 0; }
+.theme-navy .hero h1, .theme-navy .banner h1 { color: #fff; }
+.theme-navy .hero .en { color: #8FD14F; }
+.theme-navy .hero .desc, .theme-navy .banner p { color: rgba(255, 255, 255, .8); }
+.theme-navy .emb .base { opacity: .16; filter: brightness(0) invert(1); }
+.theme-navy .emb .fx { background: linear-gradient(115deg, transparent 0 36%, rgba(0, 170, 150, .6) 44%, rgba(143, 209, 79, 1) 50%, rgba(0, 170, 150, .6) 56%, transparent 64% 100%); background-size: 300% 100%; }

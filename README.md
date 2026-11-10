@@ -105,6 +105,13 @@ Google Apps Script 웹 앱입니다. `Code.gs`(서버)와 `Index.html`(화면) �
 
 `Index.html`을 내 컴퓨터에서 열면(`http://localhost:8000/apps-script/Index.html`) 저장되지 않는 미리보기 모드로 화면을 확인할 수 있습니다.
 
+## 배너 색 바꾸기
+
+페이지 상단 배너는 기본이 밝은 배경 + 옅은 엠블럼입니다. 느낌을 바꾸고 싶을 때는
+`scripts/build.py`의 `THEME = ""`를 `THEME = "navy"`로 바꾸고 `python scripts/build.py`를 실행하면
+모든 페이지 배너가 네이비 그라데이션(흰 글씨·흰 엠블럼)으로 바뀝니다. 되돌릴 때는 `""`로.
+색 정의는 `assets/css/site.css` 맨 아래 `.theme-navy` 부분입니다.
+
 ## 폴더 구조
 
 ```

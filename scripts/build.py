@@ -15,7 +15,9 @@ NAV = [
     ("research", "Research"), ("publications", "Publications"), ("news", "Lab News"), ("contact", "Contact"),
 ]
 SITE = "에너지정보처리연구실 | Energy Informatics Laboratory"
-VERSION = "20261110b"
+VERSION = "20261110c"
+# 배너 색 테마: "" = 기본(밝은 배경), "navy" = 네이비 그라데이션. 바꾼 뒤 python scripts/build.py
+THEME = ""
 # 공개 주소가 정해지면 적어 주세요 (예: "https://eil-knu.github.io"). 공유 미리보기 이미지에 쓰입니다.
 SITE_URL = "https://eil-knu.github.io"
 
@@ -42,7 +44,7 @@ HEAD = """<!doctype html>
 <link rel="stylesheet" href="assets/css/site.css?v={ver}">
 <script src="assets/js/site.js?v={ver}" defer></script>
 </head>
-<body>
+<body{body}>
 <a class="skip" href="#main">본문 바로가기</a>
 <header class="site-header">
 <div class="bar">
@@ -95,7 +97,7 @@ def build():
         nav = "\n".join(
             f'<a href="{k}.html"{cur if k == key else ""}>{label}</a>' for k, label in NAV)
         links = "\n".join(f'<a href="{k}.html">{label}</a>' for k, label in NAV[1:])
-        out = (HEAD.format(title=html.escape(title), desc=html.escape(meta.get("desc", "")), nav=nav, ver=VERSION,
+        out = (HEAD.format(title=html.escape(title), desc=html.escape(meta.get("desc", "")), nav=nav, ver=VERSION, body=(' class="theme-' + THEME + '"') if THEME else "",
                            base=(SITE_URL.rstrip("/") + "/") if SITE_URL else "")
                + text.rstrip() + "\n" + FOOT.format(links=links))
         (ROOT / f"{key}.html").write_text(out, encoding="utf-8")
