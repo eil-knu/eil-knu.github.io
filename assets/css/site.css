@@ -451,9 +451,12 @@ a.pub-title:hover { color: var(--teal); }
 
 /* ---------- 스크롤 효과 ---------- */
 .site-header .bar, .brand img { transition: height .25s ease; }
-.site-header { transition: box-shadow .25s ease; }
+.site-header { transition: box-shadow .25s ease, margin-bottom .25s ease; }
 .site-header.scrolled { box-shadow: 0 6px 18px rgba(29, 39, 96, .07); }
 @media (min-width: 1001px) {
+  /* 상단바가 줄어든 만큼(72→58px) 아래 여백으로 채워 페이지 배치가 움직이지 않게 함
+     (배치가 움직이면 맨 위 근처에서 줄었다 늘었다를 반복하며 로고가 떨림) */
+  .site-header.scrolled { margin-bottom: 14px; }
   .site-header.scrolled .bar { height: 58px; }
   .site-header.scrolled .brand img { height: 36px; }
 }
