@@ -214,8 +214,8 @@ button { font: inherit; }
   .news-feature h3 { font-size: 19px; }
 }
 @media (max-width: 480px) {
-  .news-row { grid-template-columns: 120px minmax(0, 1fr); gap: 14px; padding: 14px 0; }
-  .news-row h3 { font-size: 15px; }
+  .news-row { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; padding: 14px 0; }
+  .news-row h3 { font-size: 14.5px; line-height: 1.45; }
 }
 
 /* ---------- Publication list ---------- */
